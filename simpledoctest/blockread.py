@@ -1,6 +1,9 @@
 
 
-def dedent(line):
+def dedent(line, last_indent):
+    if last_indent is not None:
+        if line[:last_indent].isspace():
+            return last_indent, line[last_indent:]
     stripped = line.lstrip(' ')
     return len(line) - len(stripped), stripped
 
@@ -11,22 +14,19 @@ def blocks(lines):
     items = []
     for lineno, line in enumerate(lines):
 
-        indent, rest = dedent(line)
+        indent, rest = dedent(line, last_indent)
 
         if last_indent is None:
-            print repr(last_indent), indent, repr(line)
             last_indent = indent
 
         if firstline is None:
             firstline = lineno
 
-        if rest.isspace():
-            if items:
-                result.append((last_indent, firstline, items))
-            items = []
-            firstline = None
-            last_indent = None
-        elif indent != last_indent:
+        if indent != last_indent:
+            if items[0] == '\n':
+                del items[0]
+            if items and items[-1] == '\n':
+                del items[-1]
             result.append((last_indent, firstline, items))
             items = [rest]
             last_indent = indent
@@ -34,7 +34,7 @@ def blocks(lines):
 
         else:
             last_indent = indent
-            items.append(rest)
+            items.append(rest or '\n')
 
     else:
         result.append((indent, firstline, items))
