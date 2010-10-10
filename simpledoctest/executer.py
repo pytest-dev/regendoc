@@ -46,3 +46,23 @@ class Executor(object):
             result = differ.compare(contl, outl)
             print ''.join(result)
 
+
+
+def main():
+    import py
+    import sys
+
+    for name in sys.argv[1:]:
+        tmpdir = py.path.local.make_numbered_dir(prefix='doc-exec-')
+        p = py.path.local(name)
+        print 'checking', name
+        executor = Executor(
+            file = p,
+            tmpdir = tmpdir,
+        )
+        executor.run()
+
+
+
+if __name__ == '__main__':
+    main()
