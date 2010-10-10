@@ -2,7 +2,7 @@ import py
 from operator import itemgetter
 a_c_t = itemgetter('action', 'target')
 
-
+from simpledoctest.blockread import correct_content
 from simpledoctest.executer import Executor
 
 example = py.path.local(__file__).dirpath().dirpath().join('example.txt')
@@ -45,6 +45,9 @@ an echo:
     oh no
 """
 
+simple_corrected = simple.replace('oh no', 'hi')
+
+
 def test_simple_new_content(tmpdir):
     fp = tmpdir.join('example.txt')
     fp.write(simple)
@@ -63,3 +66,18 @@ def test_simple_new_content(tmpdir):
         'line': 2,
     }
     assert needed_update == expeccted_update
+
+
+def test_single_update():
+
+    update = {
+        'action': 'shell',
+        'target': 'echo hi',
+        'content': 'oh no\n',
+        'new_content': 'hi\n',
+        'indent': 4,
+        'line': 2,
+    }
+
+    corrected = correct_content(simple, [update])
+    assert corrected == simple_corrected
