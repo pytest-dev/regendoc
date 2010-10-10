@@ -1,0 +1,38 @@
+a simple test function call with one argument factory
+==============================================================
+
+Test functions can specify one ore more arguments ("funcargs")
+and a test module or plugin can define factory functions that provide
+the function argument.  Let's look at a simple self-contained
+example that you can put into a test module::
+
+    # content of: test_simplefactory.py
+    def pytest_funcarg__myfuncarg(request):
+        return 42
+
+    def test_function(myfuncarg):
+        assert myfuncarg == 17
+
+.. code-block:: bash
+    
+    $ py.test test_simplefactory.py
+
+    hello
+
+The traceback shows that the test function was called with a ``myfuncarg``
+value of ``42`` and the assert fails accordingly.  Here is how py.test
+calls the test function:
+
+1. py.test discovers the ``test_function`` because of the ``test_`` prefix.
+   The test function needs a function argument named ``myfuncarg``.
+   A matching factory function is discovered by looking for the
+   name ``pytest_funcarg__myfuncarg``.
+
+2. ``pytest_funcarg__myfuncarg(request)`` is called and
+   returns the value for ``myfuncarg``.
+
+3. ``test_function(42)`` call is executed.
+
+Note that if you misspell a function argument or want
+to use one that isn't available, you'll see an error
+with a list of available function arguments.
