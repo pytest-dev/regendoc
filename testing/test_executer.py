@@ -37,3 +37,29 @@ def test_execute_run(tmpdir):
     executor.run()
 
     assert tmpdir.join('test_simplefactory.py').check()
+
+
+simple = """
+an echo:
+    $ echo hi
+    oh no
+"""
+
+def test_simple_new_content(tmpdir):
+    fp = tmpdir.join('example.txt')
+    fp.write(simple)
+    runner = Executor(
+        file = fp,
+        tmpdir = tmpdir,
+    )
+
+    needed_update, = runner.run() # exactly one
+    expeccted_update = {
+        'action': 'shell',
+        'target': 'echo hi',
+        'content': 'oh no\n',
+        'new_content': 'hi\n',
+        'indent': 4,
+        'line': 2,
+    }
+    assert needed_update == expeccted_update

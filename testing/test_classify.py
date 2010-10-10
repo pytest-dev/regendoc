@@ -13,7 +13,7 @@ def test_classify_write():
         'target': 'test_foo.py',
         'content': 'def test()\n    pass\n',
         'indent': 4,
-        'lineno': None,
+        'line': None,
     }
     assert  write == expected
 
@@ -27,6 +27,6 @@ def test_classify_shell():
         'target': 'py.test -x',
         'content': 'crud\n',
         'indent': 4,
-        'lineno': None,
+        'line': None,
     }
     assert cmd == expected
