@@ -1,4 +1,6 @@
 import py
+from operator import itemgetter
+a_c_t = itemgetter('action', 'target')
 
 
 from simpledoctest.executer import Executor
@@ -16,7 +18,7 @@ def test_execute_actions(tmpdir):
 
     actions = list(executer.read_actions())
 
-    interesting = [x[:2] for x in actions]
+    interesting =  [a_c_t(x) for x in actions]
     expected = [
         ('write', 'test_simplefactory.py'),
         ('shell', 'py.test test_simplefactory.py')]
