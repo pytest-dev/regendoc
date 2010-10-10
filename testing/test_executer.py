@@ -19,7 +19,7 @@ def test_execute_actions(tmpdir):
     interesting = [x[:2] for x in actions]
     expected = [
         ('write', 'test_simplefactory.py'),
-        ('exec', 'py.test test_simplefactory.py')]
+        ('shell', 'py.test test_simplefactory.py')]
 
     assert interesting == expected
 

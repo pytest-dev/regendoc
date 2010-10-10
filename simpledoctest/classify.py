@@ -8,7 +8,7 @@ def classify(lines):
         return 'write', target, content
     elif first[0] == '$':
         cmd = first[1:].strip()
-        return 'exec', cmd, content
+        return 'shell', cmd, content
 
     return None, first, content
 
