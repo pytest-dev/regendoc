@@ -1,6 +1,6 @@
 
 
-def classify(lines, indent=4, lineno=None):
+def classify(lines, indent=4, line=None):
     first = lines[0]
     content = ''.join(lines[1:])
     
@@ -10,7 +10,7 @@ def classify(lines, indent=4, lineno=None):
             'target': target,
             'content': content,
             'indent': indent,
-            'lineno': lineno,
+            'line': line,
         }
 
 

@@ -13,17 +13,22 @@ class Executor(object):
     def read_actions(self):
         lines = self.file.read().splitlines(True)
         for indent, line, data in blocks(lines):
-            mapping = classify(data)
+            mapping = classify(lines=data, indent=indent, line=line)
             if mapping['action']: # None if no idea
                 yield mapping
 
 
     def run(self):
+        needed_updates = []
         for m in self.read_actions():
             print m['action'], repr(m['target'])
 
             method = getattr(self, 'do_' + m['action'])
-            method(m['target'], m['content'])
+            new_content = method(m['target'], m['content'])
+            if new_content:
+                m['new_content'] = new_content
+                needed_updates.append(m)
+        return needed_updates
 
     def do_write(self, target, content):
         #XXX: insecure
@@ -45,6 +50,7 @@ class Executor(object):
             contl = content.splitlines(True)
             result = differ.compare(contl, outl)
             print ''.join(result)
+            return out
 
 
 
