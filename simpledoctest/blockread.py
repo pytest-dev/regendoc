@@ -25,6 +25,7 @@ def blocks(lines):
         if indent != last_indent:
             if items[0] == '\n':
                 del items[0]
+                firstline+=1
             if items and items[-1] == '\n':
                 del items[-1]
             result.append((last_indent, firstline, items))
