@@ -8,13 +8,25 @@ def test_classify_write():
         '    pass\n',
     ])
 
-    expected = 'write', 'test_foo.py', 'def test()\n    pass\n'
+    expected = {
+        'action': 'write',
+        'target': 'test_foo.py',
+        'content': 'def test()\n    pass\n',
+        'indent': 4,
+        'lineno': None,
+    }
     assert  write == expected
 
 def test_classify_shell():
-    cmd = classify([
+    cmd = classify(lines=[
         '$ py.test -x\n',
         'crud\n',
     ])
-    expected = 'shell', 'py.test -x', 'crud\n'
+    expected = {
+        'action': 'shell',
+        'target': 'py.test -x',
+        'content': 'crud\n',
+        'indent': 4,
+        'lineno': None,
+    }
     assert cmd == expected

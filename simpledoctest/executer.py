@@ -13,17 +13,17 @@ class Executor(object):
     def read_actions(self):
         lines = self.file.read().splitlines(True)
         for indent, line, data in blocks(lines):
-            act = classify(data)
-            if act[0]: # 3 times none if no idea
-                yield act
+            mapping = classify(data)
+            if mapping['action']: # None if no idea
+                yield mapping
 
 
     def run(self):
-        for action, target, content in self.read_actions():
-            print action, repr(target)
+        for m in self.read_actions():
+            print m['action'], repr(m['target'])
 
-            method = getattr(self, 'do_' + action)
-            method(target, content)
+            method = getattr(self, 'do_' + m['action'])
+            method(m['target'], m['content'])
 
     def do_write(self, target, content):
         #XXX: insecure
