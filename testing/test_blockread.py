@@ -8,7 +8,7 @@ more text
 next block::
 
     indent
-    block
+      block
 
     with more
 
@@ -23,7 +23,7 @@ def test_blocks():
     expected = [
         # indent level, start line, lines
         (0, 0, ['some text\n', 'more text\n', '\n', 'next block::\n']),
-        (4, 6, ['indent\n', 'block\n', '\n', 'with more\n']),
+        (4, 6, ['indent\n', '  block\n', '\n', 'with more\n']),
         (0, 11, ['.. directive:: test\n']),
         (4, 12, [':param: test\n', '\n', 'text\n'])
     ]
