@@ -16,5 +16,5 @@ def test_classify_shell():
         '$ py.test -x\n',
         'crud\n',
     ])
-    expected = 'exec', 'py.test -x', 'crud\n'
+    expected = 'shell', 'py.test -x', 'crud\n'
     assert cmd == expected

@@ -29,7 +29,7 @@ class Executor(object):
         #XXX: insecure
         self.tmpdir.join(target).write(content)
 
-    def do_exec(self, target, content):
+    def do_shell(self, target, content):
         proc = subprocess.Popen(
             target,
             shell=True,
