@@ -20,17 +20,17 @@ def blocks(lines):
         if firstline is None:
             firstline = lineno
 
-        if rest.isspace() or indent !=last_indent:
+        if rest.isspace():
             if items:
                 result.append((last_indent, firstline, items))
-            if not rest.isspace():
-                items = [rest]
-                last_indent = indent
-                firstline = lineno
-            else:
-                firstline = None
-                last_indent = None
-                items = []
+            items = []
+            firstline = None
+            last_indent = None
+        elif indent != last_indent:
+            result.append((last_indent, firstline, items))
+            items = [rest]
+            last_indent = indent
+            firstline = lineno
 
         else:
             last_indent = indent
