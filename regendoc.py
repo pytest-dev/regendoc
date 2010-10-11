@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import argparse
 import subprocess
@@ -166,7 +166,7 @@ def check_file(file, tmpdir):
     return needed_updates
 
 
-def main(files, should_update, rootdir=None):
+def _main(files, should_update, rootdir=None):
     for name in files:
         tw.sep('=', 'checking %s' % (name,), bold=True)
         tmpdir = py.path.local.make_numbered_dir(
@@ -182,8 +182,10 @@ def main(files, should_update, rootdir=None):
             corrected = correct_content(content, updates)
             path.write(corrected)
 
+def main():
+    options = parser.parse_args()
+    return _main(options.files, should_update=options.update)
 
 
 if __name__=='__main__':
-    options = parser.parse_args()
-    main(options.files, should_update=options.update)
+    main()

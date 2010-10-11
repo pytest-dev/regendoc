@@ -7,5 +7,9 @@ setup(
     author='Ronny Pfannschmidt',
     author_email='Ronny.Pfannschmidt@gmx.de',
     py_modules=['regendoc'],
+    entry_points={
+        'console_scripts': [
+            'regendoc = regendoc:main',
+        ]},
 )
 
