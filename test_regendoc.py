@@ -1,7 +1,7 @@
 
 import py
 from regendoc import blocks, correct_content
-from regendoc import classify, main
+from regendoc import classify, _main
 from regendoc import check_file, actions_of
 
 from operator import itemgetter
@@ -160,7 +160,7 @@ def test_check_file(tmpdir):
 
 
 def test_main_no_update(tmpdir):
-    main(
+    _main(
         [example],
         should_update=False,
         rootdir=tmpdir,
@@ -172,7 +172,7 @@ def test_main_no_update(tmpdir):
 def test_main_update(tmpdir):
     simple_fp = tmpdir.join('simple.txt')
     simple_fp.write(simple)
-    main(
+    _main(
         [simple_fp],
         should_update=True,
         rootdir=tmpdir,
