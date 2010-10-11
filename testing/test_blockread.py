@@ -1,4 +1,4 @@
-from simpledoctest.blockread import blocks
+from regendoc import blocks
 import pprint
 
 input_data = """
