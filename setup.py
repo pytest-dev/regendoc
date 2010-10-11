@@ -13,4 +13,7 @@ setup(
         'console_scripts': [
             'regendoc = regendoc:main',
         ]},
+    install_requires=[
+        'pylib',
+    ],
 )
