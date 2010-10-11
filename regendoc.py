@@ -144,20 +144,20 @@ def check_file(file, tmpdir):
     return needed_updates
 
 
-def main():
-    options = parser.parse_args()
+def main(files, should_update):
     import py
 
-    for name in options.files:
+    for name in files:
         tmpdir = py.path.local.make_numbered_dir(prefix='doc-exec-')
-        p = py.path.local(name)
+        path = py.path.local(name)
         print 'checking', name
-        execute(
-            file = p,
+        check_file(
+            file = path,
             tmpdir = tmpdir,
         )
         
 
 
 if __name__=='__main__':
-    main()
+    options = parser.parse_args()
+    main(options.files, should_update=options.update)
