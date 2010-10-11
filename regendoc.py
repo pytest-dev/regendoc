@@ -3,6 +3,9 @@
 import argparse
 import subprocess
 
+import py
+tw = py.io.TerminalWriter()
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--update',
                     default=False,
@@ -123,8 +126,19 @@ def do_shell(tmpdir, target, content):
         outl = out.splitlines(True)
         contl = content.splitlines(True)
         result = differ.compare(contl, outl)
-        print ''.join(result)
+        printdiff(result)
         return out
+
+def printdiff(lines):
+    mapping = {
+        '+': 'green',
+        '-': 'red',
+    }
+    for line in lines:
+        color = mapping.get(line[0])
+        kw = {color:True} if color else {}
+        tw.write(line, **kw)
+
 
 
 def check_file(file, tmpdir):
@@ -141,8 +155,6 @@ def check_file(file, tmpdir):
 
 
 def main(files, should_update, rootdir=None):
-    import py
-    tw = py.io.TerminalWriter()
     for name in files:
         tw.sep('=', 'checking %s' % (name,), bold=True)
         tmpdir = py.path.local.make_numbered_dir(
