@@ -10,7 +10,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--update',
                     default=False,
                     action='store_true',
-                    help='refresh the files instead of just reporting the difference')
+                    help='refresh the files instead of'
+                         ' just reporting the difference')
 parser.add_argument('files',
                     nargs='+',
                    help='the files to check/update')
@@ -42,7 +43,7 @@ def blocks(lines):
         if indent != last_indent:
             if items[0] == '\n':
                 del items[0]
-                firstline+=1
+                firstline += 1
             if items and items[-1] == '\n':
                 del items[-1]
             result.append((last_indent, firstline, items))
@@ -57,7 +58,6 @@ def blocks(lines):
     else:
         result.append((indent, firstline, items))
 
-
     return result
 
 
@@ -67,9 +67,10 @@ def correct_content(content, updates):
     for update in reversed(updates):
         line = update['line']
         old_lines = len(update['content'].splitlines())
-        indent = ' '*update['indent']
-        new_lines = [ indent + _line for _line in update['new_content'].splitlines(1)]
-        lines[line+1: line+old_lines+1] = new_lines
+        indent = ' ' * update['indent']
+        new_lines = [indent + _line
+                     for _line in update['new_content'].splitlines(1)]
+        lines[line + 1:line + old_lines + 1] = new_lines
 
     return ''.join(lines)
 
@@ -87,7 +88,6 @@ def classify(lines, indent=4, line=None):
             'indent': indent,
             'line': line,
         }
-
 
     if first.startswith('# content of'):
         target = first.strip().split()[-1]
@@ -107,7 +107,7 @@ def actions_of(file):
     lines = file.read().splitlines(True)
     for indent, line, data in blocks(lines):
         mapping = classify(lines=data, indent=indent, line=line)
-        if mapping['action']: # None if no idea
+        if mapping['action']:  # None if no idea
             mapping['file'] = file
             yield mapping
 
@@ -123,7 +123,6 @@ def do_shell(tmpdir, action):
     else:
         cwd = tmpdir
 
-
     proc = subprocess.Popen(
         action['target'],
         shell=True,
@@ -132,7 +131,8 @@ def do_shell(tmpdir, action):
         stderr=subprocess.PIPE,
     )
     out, err = proc.communicate()
-    if out != action['content']: #XXX join with err?
+    # XXX join with err?
+    if out != action['content']:
         import difflib
         differ = difflib.Differ()
         outl = out.splitlines(True)
@@ -141,6 +141,7 @@ def do_shell(tmpdir, action):
         printdiff(result)
         return out
 
+
 def printdiff(lines):
     mapping = {
         '+': 'green',
@@ -148,9 +149,8 @@ def printdiff(lines):
     }
     for line in lines:
         color = mapping.get(line[0])
-        kw = {color:True} if color else {}
+        kw = {color: True} if color else {}
         tw.write(line, **kw)
-
 
 
 def check_file(file, tmpdir):
@@ -174,18 +174,19 @@ def _main(files, should_update, rootdir=None):
             prefix='doc-exec-')
         path = py.path.local(name)
         updates = check_file(
-            file = path,
-            tmpdir = tmpdir,
+            file=path,
+            tmpdir=tmpdir,
         )
         if should_update:
             content = path.read()
             corrected = correct_content(content, updates)
             path.write(corrected)
 
+
 def main():
     options = parser.parse_args()
     return _main(options.files, should_update=options.update)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     main()

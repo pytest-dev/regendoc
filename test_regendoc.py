@@ -35,6 +35,7 @@ an echo:
 
 simple_corrected = simple.replace('oh no', 'hi')
 
+
 def test_blocks():
     result = blocks(input_data_for_blocks.splitlines(True))
     expected = [
@@ -42,7 +43,7 @@ def test_blocks():
         (0, 1, ['some text\n', 'more text\n', '\n', 'next block::\n']),
         (4, 6, ['indent\n', '  block\n', '\n', 'with more\n']),
         (0, 11, ['.. directive:: test\n']),
-        (4, 12, [':param: test\n', '\n', 'text\n'])
+        (4, 12, [':param: test\n', '\n', 'text\n']),
     ]
     py.std.pprint.pprint(result)
     assert result == expected
@@ -97,15 +98,16 @@ def test_classify_chdir_shell():
         'indent': 4,
         'line': None,
     }
-    
+
     assert cmd == expected
+
 
 def test_simple_new_content(tmpdir):
     fp = tmpdir.join('example.txt')
     fp.write(simple)
-    needed_update ,= check_file(
-        file = fp,
-        tmpdir = tmpdir,
+    needed_update, = check_file(
+        file=fp,
+        tmpdir=tmpdir,
     )
 
     expeccted_update = {
@@ -138,10 +140,9 @@ def test_single_update():
 
 def test_actions_of(tmpdir):
 
-
     actions = list(actions_of(example))
 
-    interesting =  [a_c_t(x) for x in actions]
+    interesting = [a_c_t(x) for x in actions]
     expected = [
         ('write', 'test_simplefactory.py'),
         ('shell', 'py.test test_simplefactory.py')]
@@ -156,7 +157,6 @@ def test_check_file(tmpdir):
         tmpdir=tmpdir,
     )
     assert tmpdir.join('test_simplefactory.py').check()
-
 
 
 def test_main_no_update(tmpdir):
@@ -190,7 +190,7 @@ def test_docfile_chdir(tmpdir):
                   '  nested $ cat file\n'
                   '  some other text\n')
 
-    action ,= list(actions_of(example))
+    action, = list(actions_of(example))
     excpected_action = {
         'action': 'shell',
         'file': example,
@@ -202,8 +202,6 @@ def test_docfile_chdir(tmpdir):
     }
     assert action == excpected_action
 
-
     needed_updates = check_file(example, tmpdir)
     py.std.pprint.pprint(needed_updates)
     assert needed_updates
-
