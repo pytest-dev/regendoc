@@ -1,7 +1,7 @@
-from regendoc import blocks
 import pprint
+from regendoc import blocks
 
-input_data = """
+input_data_for_blocks = """
 some text
 more text
 
@@ -19,7 +19,7 @@ next block::
 """
 
 def test_blocks():
-    result = blocks(input_data.splitlines(True))
+    result = blocks(input_data_for_blocks.splitlines(True))
     expected = [
         # indent level, start line, lines
         (0, 1, ['some text\n', 'more text\n', '\n', 'next block::\n']),
