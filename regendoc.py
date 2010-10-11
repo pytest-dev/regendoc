@@ -142,13 +142,13 @@ def check_file(file, tmpdir):
 
 def main(files, should_update, rootdir=None):
     import py
-
+    tw = py.io.TerminalWriter()
     for name in files:
+        tw.sep('=', 'checking %s' % (name,), bold=True)
         tmpdir = py.path.local.make_numbered_dir(
             rootdir=rootdir,
             prefix='doc-exec-')
         path = py.path.local(name)
-        print 'checking', name
         updates = check_file(
             file = path,
             tmpdir = tmpdir,
