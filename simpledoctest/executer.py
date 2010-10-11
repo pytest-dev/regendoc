@@ -44,16 +44,4 @@ def execute(file, tmpdir):
             needed_updates.append(m)
     return needed_updates
 
-class Executor(object):
-    def __init__(self, file, tmpdir):
-        self.file = file
-        self.tmpdir = tmpdir
-
-
-
-
-
-    def run(self):
-        return execute(self.file, self.tmpdir)
-
 
