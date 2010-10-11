@@ -1,2 +1,3 @@
 include example.txt
 include test_regendoc.py
+include tox.ini
