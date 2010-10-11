@@ -26,6 +26,7 @@ next block::
     text
 """
 
+
 simple = """
 an echo:
     $ echo hi
@@ -57,6 +58,7 @@ def test_classify_write():
 
     expected = {
         'action': 'write',
+        'cwd': None,
         'target': 'test_foo.py',
         'content': 'def test()\n    pass\n',
         'indent': 4,
@@ -72,6 +74,7 @@ def test_classify_shell():
     ])
     expected = {
         'action': 'shell',
+        'cwd': None,
         'target': 'py.test -x',
         'content': 'crud\n',
         'indent': 4,
@@ -79,6 +82,23 @@ def test_classify_shell():
     }
     assert cmd == expected
 
+
+def test_classify_chdir_shell():
+    cmd = classify(lines=[
+        'testing $ echo hi\n',
+        'crud\n',
+    ])
+
+    expected = {
+        'action': 'shell',
+        'cwd': 'testing',
+        'target': 'echo hi',
+        'content': 'crud\n',
+        'indent': 4,
+        'line': None,
+    }
+    
+    assert cmd == expected
 
 def test_simple_new_content(tmpdir):
     fp = tmpdir.join('example.txt')
@@ -90,6 +110,8 @@ def test_simple_new_content(tmpdir):
 
     expeccted_update = {
         'action': 'shell',
+        'cwd': None,
+        'file': fp,
         'target': 'echo hi',
         'content': 'oh no\n',
         'new_content': 'hi\n',
@@ -158,3 +180,30 @@ def test_main_update(tmpdir):
     corrected = simple_fp.read()
 
     assert corrected == simple_corrected
+
+
+def test_docfile_chdir(tmpdir):
+
+    tmpdir.ensure('nested/file').write('some text\n')
+    example = tmpdir.join('example.txt')
+    example.write('some shell test\n'
+                  '  nested $ cat file\n'
+                  '  some other text\n')
+
+    action ,= list(actions_of(example))
+    excpected_action = {
+        'action': 'shell',
+        'file': example,
+        'content': 'some other text\n',
+        'cwd': 'nested',
+        'indent': 2,
+        'line': 1,
+        'target': 'cat file',
+    }
+    assert action == excpected_action
+
+
+    needed_updates = check_file(example, tmpdir)
+    py.std.pprint.pprint(needed_updates)
+    assert needed_updates
+

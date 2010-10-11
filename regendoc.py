@@ -78,9 +78,10 @@ def classify(lines, indent=4, line=None):
     first = lines[0]
     content = ''.join(lines[1:])
 
-    def at(action, target):
+    def at(action, target, cwd=None):
         return {
             'action': action,
+            'cwd': cwd,
             'target': target,
             'content': content,
             'indent': indent,
@@ -94,6 +95,10 @@ def classify(lines, indent=4, line=None):
     elif first[0] == '$':
         cmd = first[1:].strip()
         return at('shell', cmd)
+    elif ' $ ' in first:
+        cwd, target = first.split(' $ ')
+        target = target.strip()
+        return at('shell', target, cwd)
 
     return at(None, first)
 
@@ -103,28 +108,35 @@ def actions_of(file):
     for indent, line, data in blocks(lines):
         mapping = classify(lines=data, indent=indent, line=line)
         if mapping['action']: # None if no idea
+            mapping['file'] = file
             yield mapping
 
 
-def do_write(tmpdir, target, content):
+def do_write(tmpdir, action):
     #XXX: insecure
-    targetfile = tmpdir.join(target).write(content)
+    targetfile = tmpdir.join(action['target']).write(action['content'])
 
 
-def do_shell(tmpdir, target, content):
+def do_shell(tmpdir, action):
+    if action['cwd']:
+        cwd = action['file'].dirpath().join(action['cwd'])
+    else:
+        cwd = tmpdir
+
+
     proc = subprocess.Popen(
-        target,
+        action['target'],
         shell=True,
-        cwd=str(tmpdir),
+        cwd=str(cwd),
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
     out, err = proc.communicate()
-    if out != content: #XXX join with err?
+    if out != action['content']: #XXX join with err?
         import difflib
         differ = difflib.Differ()
         outl = out.splitlines(True)
-        contl = content.splitlines(True)
+        contl = action['content'].splitlines(True)
         result = differ.compare(contl, outl)
         printdiff(result)
         return out
@@ -143,14 +155,14 @@ def printdiff(lines):
 
 def check_file(file, tmpdir):
     needed_updates = []
-    for m in actions_of(file):
-        print m['action'], repr(m['target'])
+    for action in actions_of(file):
+        print action['action'], repr(action['target'])
 
-        method = globals()['do_' + m['action']]
-        new_content = method(tmpdir, m['target'], m['content'])
+        method = globals()['do_' + action['action']]
+        new_content = method(tmpdir, action)
         if new_content:
-            m['new_content'] = new_content
-            needed_updates.append(m)
+            action['new_content'] = new_content
+            needed_updates.append(action)
     return needed_updates
 
 
