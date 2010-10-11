@@ -144,18 +144,24 @@ def check_file(file, tmpdir):
     return needed_updates
 
 
-def main(files, should_update):
+def main(files, should_update, rootdir=None):
     import py
 
     for name in files:
-        tmpdir = py.path.local.make_numbered_dir(prefix='doc-exec-')
+        tmpdir = py.path.local.make_numbered_dir(
+            rootdir=rootdir,
+            prefix='doc-exec-')
         path = py.path.local(name)
         print 'checking', name
-        check_file(
+        updates = check_file(
             file = path,
             tmpdir = tmpdir,
         )
-        
+        if should_update:
+            content = path.read()
+            corrected = correct_content(content, updates)
+            path.write(corrected)
+
 
 
 if __name__=='__main__':
