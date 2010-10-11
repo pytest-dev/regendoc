@@ -3,7 +3,7 @@ from operator import itemgetter
 a_c_t = itemgetter('action', 'target')
 
 from simpledoctest.blockread import correct_content
-from simpledoctest.executer import execute, actions_of
+from regendoc import execute, actions_of
 
 example = py.path.local(__file__).dirpath().dirpath().join('example.txt')
 
