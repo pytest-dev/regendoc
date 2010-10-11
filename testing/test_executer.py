@@ -3,7 +3,7 @@ from operator import itemgetter
 a_c_t = itemgetter('action', 'target')
 
 from simpledoctest.blockread import correct_content
-from simpledoctest.executer import Executor, actions_of
+from simpledoctest.executer import execute, actions_of
 
 example = py.path.local(__file__).dirpath().dirpath().join('example.txt')
 
@@ -22,14 +22,10 @@ def test_execute_actions(tmpdir):
 
 def test_execute_run(tmpdir):
 
-    executor = Executor(
+    execute(
         file=example,
         tmpdir=tmpdir,
     )
-
-
-    executor.run()
-
     assert tmpdir.join('test_simplefactory.py').check()
 
 
@@ -45,12 +41,11 @@ simple_corrected = simple.replace('oh no', 'hi')
 def test_simple_new_content(tmpdir):
     fp = tmpdir.join('example.txt')
     fp.write(simple)
-    runner = Executor(
+    needed_update ,= execute(
         file = fp,
         tmpdir = tmpdir,
     )
 
-    needed_update, = runner.run() # exactly one
     expeccted_update = {
         'action': 'shell',
         'target': 'echo hi',
