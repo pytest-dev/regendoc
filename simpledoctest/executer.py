@@ -10,6 +10,28 @@ def actions_of(file):
         if mapping['action']: # None if no idea
             yield mapping
 
+def do_write(tmpdir, target, content):
+    #XXX: insecure
+    targetfile = tmpdir.join(target).write(content)
+
+def do_shell(tmpdir, target, content):
+    proc = subprocess.Popen(
+        target,
+        shell=True,
+        cwd=str(tmpdir),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    out, err = proc.communicate()
+    if out != content: #XXX join with err?
+        import difflib
+        differ = difflib.Differ()
+        outl = out.splitlines(True)
+        contl = content.splitlines(True)
+        result = differ.compare(contl, outl)
+        print ''.join(result)
+        return out
+
 
 class Executor(object):
     def __init__(self, file, tmpdir):
@@ -25,33 +47,11 @@ class Executor(object):
         for m in actions_of(self.file):
             print m['action'], repr(m['target'])
 
-            method = getattr(self, 'do_' + m['action'])
-            new_content = method(m['target'], m['content'])
+            method = globals()['do_' + m['action']]
+            new_content = method(self.tmpdir, m['target'], m['content'])
             if new_content:
                 m['new_content'] = new_content
                 needed_updates.append(m)
         return needed_updates
-
-    def do_write(self, target, content):
-        #XXX: insecure
-        self.tmpdir.join(target).write(content)
-
-    def do_shell(self, target, content):
-        proc = subprocess.Popen(
-            target,
-            shell=True,
-            cwd=str(self.tmpdir),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-        out, err = proc.communicate()
-        if out != content: #XXX join with err?
-            import difflib
-            differ = difflib.Differ()
-            outl = out.splitlines(True)
-            contl = content.splitlines(True)
-            result = differ.compare(contl, outl)
-            print ''.join(result)
-            return out
 
 
