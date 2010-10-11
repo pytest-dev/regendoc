@@ -131,7 +131,7 @@ def do_shell(tmpdir, target, content):
         return out
 
 
-def execute(file, tmpdir):
+def check_file(file, tmpdir):
     needed_updates = []
     for m in actions_of(file):
         print m['action'], repr(m['target'])

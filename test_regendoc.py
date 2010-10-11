@@ -2,7 +2,7 @@
 import py
 from regendoc import blocks, correct_content
 from regendoc import classify
-from regendoc import execute, actions_of
+from regendoc import check_file, actions_of
 
 from operator import itemgetter
 a_c_t = itemgetter('action', 'target')
@@ -83,7 +83,7 @@ def test_classify_shell():
 def test_simple_new_content(tmpdir):
     fp = tmpdir.join('example.txt')
     fp.write(simple)
-    needed_update ,= execute(
+    needed_update ,= check_file(
         file = fp,
         tmpdir = tmpdir,
     )
@@ -114,7 +114,7 @@ def test_single_update():
     assert corrected == simple_corrected
 
 
-def test_execute_actions(tmpdir):
+def test_actions_of(tmpdir):
 
 
     actions = list(actions_of(example))
@@ -127,9 +127,9 @@ def test_execute_actions(tmpdir):
     assert interesting == expected
 
 
-def test_execute_run(tmpdir):
+def test_check_file(tmpdir):
 
-    execute(
+    check_file(
         file=example,
         tmpdir=tmpdir,
     )
