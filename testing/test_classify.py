@@ -1,4 +1,4 @@
-from simpledoctest.classify import classify
+from regendoc import classify
 
 def test_classify_write():
 
