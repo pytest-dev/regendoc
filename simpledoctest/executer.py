@@ -32,6 +32,17 @@ def do_shell(tmpdir, target, content):
         print ''.join(result)
         return out
 
+def execute(file, tmpdir):
+    needed_updates = []
+    for m in actions_of(file):
+        print m['action'], repr(m['target'])
+
+        method = globals()['do_' + m['action']]
+        new_content = method(tmpdir, m['target'], m['content'])
+        if new_content:
+            m['new_content'] = new_content
+            needed_updates.append(m)
+    return needed_updates
 
 class Executor(object):
     def __init__(self, file, tmpdir):
@@ -43,15 +54,6 @@ class Executor(object):
 
 
     def run(self):
-        needed_updates = []
-        for m in actions_of(self.file):
-            print m['action'], repr(m['target'])
-
-            method = globals()['do_' + m['action']]
-            new_content = method(self.tmpdir, m['target'], m['content'])
-            if new_content:
-                m['new_content'] = new_content
-                needed_updates.append(m)
-        return needed_updates
+        return execute(self.file, self.tmpdir)
 
 
