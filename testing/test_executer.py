@@ -3,20 +3,14 @@ from operator import itemgetter
 a_c_t = itemgetter('action', 'target')
 
 from simpledoctest.blockread import correct_content
-from simpledoctest.executer import Executor
+from simpledoctest.executer import Executor, actions_of
 
 example = py.path.local(__file__).dirpath().dirpath().join('example.txt')
 
 def test_execute_actions(tmpdir):
 
 
-    executer = Executor(
-        file=example,
-        tmpdir=tmpdir,
-    )
-
-
-    actions = list(executer.read_actions())
+    actions = list(actions_of(example))
 
     interesting =  [a_c_t(x) for x in actions]
     expected = [

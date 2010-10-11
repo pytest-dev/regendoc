@@ -3,6 +3,14 @@ from simpledoctest.classify import classify
 import subprocess
 
 
+def actions_of(file):
+    lines = file.read().splitlines(True)
+    for indent, line, data in blocks(lines):
+        mapping = classify(lines=data, indent=indent, line=line)
+        if mapping['action']: # None if no idea
+            yield mapping
+
+
 class Executor(object):
     def __init__(self, file, tmpdir):
         self.file = file
@@ -10,17 +18,11 @@ class Executor(object):
 
 
 
-    def read_actions(self):
-        lines = self.file.read().splitlines(True)
-        for indent, line, data in blocks(lines):
-            mapping = classify(lines=data, indent=indent, line=line)
-            if mapping['action']: # None if no idea
-                yield mapping
 
 
     def run(self):
         needed_updates = []
-        for m in self.read_actions():
+        for m in actions_of(self.file):
             print m['action'], repr(m['target'])
 
             method = getattr(self, 'do_' + m['action'])
