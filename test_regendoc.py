@@ -1,5 +1,6 @@
 import pprint
 from regendoc import blocks
+from regendoc import classify
 
 input_data_for_blocks = """
 some text
@@ -18,6 +19,7 @@ next block::
     text
 """
 
+
 def test_blocks():
     result = blocks(input_data_for_blocks.splitlines(True))
     expected = [
@@ -31,3 +33,34 @@ def test_blocks():
     assert result == expected
 
 
+def test_classify_write():
+
+    write = classify([
+        '# content of test_foo.py\n',
+        'def test()\n',
+        '    pass\n',
+    ])
+
+    expected = {
+        'action': 'write',
+        'target': 'test_foo.py',
+        'content': 'def test()\n    pass\n',
+        'indent': 4,
+        'line': None,
+    }
+    assert  write == expected
+
+
+def test_classify_shell():
+    cmd = classify(lines=[
+        '$ py.test -x\n',
+        'crud\n',
+    ])
+    expected = {
+        'action': 'shell',
+        'target': 'py.test -x',
+        'content': 'crud\n',
+        'indent': 4,
+        'line': None,
+    }
+    assert cmd == expected
