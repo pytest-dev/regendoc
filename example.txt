@@ -17,7 +17,7 @@ example that you can put into a test module::
     
     $ py.test test_simplefactory.py
 
-    hello
+    output should be here - but thats nice for testing
 
 The traceback shows that the test function was called with a ``myfuncarg``
 value of ``42`` and the assert fails accordingly.  Here is how py.test
