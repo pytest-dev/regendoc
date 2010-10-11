@@ -1,0 +1,2 @@
+include example.txt
+include test_regendoc.py
