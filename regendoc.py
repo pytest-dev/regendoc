@@ -66,11 +66,7 @@ def correct_content(content, updates):
         old_lines = len(update['content'].splitlines())
         indent = ' '*update['indent']
         new_lines = [ indent + _line for _line in update['new_content'].splitlines(1)]
-        import pprint
-        pprint.pprint(locals())
-
         lines[line+1: line+old_lines+1] = new_lines
-
 
     return ''.join(lines)
 
