@@ -4,8 +4,6 @@ import argparse
 import subprocess
 
 from simpledoctest.blockread import blocks
-from simpledoctest.classify import classify
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--update',
