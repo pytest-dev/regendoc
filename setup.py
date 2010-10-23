@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='RegenDoc',
-    version='0.1',
+    version='0.2.dev1',
     description='a tool to check/fix simple file/shell examples'
                 ' in documentation',
     url='http://bitbucket.org/RonnyPfannschmidt/regendoc/',
@@ -14,6 +14,6 @@ setup(
             'regendoc = regendoc:main',
         ]},
     install_requires=[
-        'pylib',
+        'pylib', 'argparse'
     ],
 )
