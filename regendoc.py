@@ -156,7 +156,8 @@ def printdiff(lines):
 def check_file(file, tmpdir):
     needed_updates = []
     for action in actions_of(file):
-        print action['action'], repr(action['target'])
+        py.builtin.print_(action['action'],
+            repr(action['target']))
 
         method = globals()['do_' + action['action']]
         new_content = method(tmpdir, action)
