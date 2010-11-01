@@ -56,8 +56,10 @@ def blocks(lines):
             items.append(rest or '\n')
 
     else:
-        result.append((indent, firstline, items))
-
+        try:
+            result.append((indent, firstline, items))
+        except UnboundLocalError:
+            pass
     return result
 
 
