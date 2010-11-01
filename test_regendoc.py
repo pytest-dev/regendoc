@@ -215,3 +215,22 @@ def test_docfile_chdir(tmpdir):
     needed_updates = check_file(example, tmpdir)
     py.std.pprint.pprint(needed_updates)
     assert needed_updates
+
+
+def test_parsing_problem(tmpdir):
+    simple_fp = tmpdir.join('index.txt')
+    simple_fp.write(example_index)
+    _main(
+        [simple_fp],
+        should_update=True,
+        rootdir=tmpdir,
+    )
+    corrected = simple_fp.read()
+    assert corrected == example_index
+
+example_index="""
+py.test: no-boilerplate testing with Python
+==============================================
+    
+.. toctree:: 
+"""

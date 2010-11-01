@@ -78,6 +78,8 @@ def correct_content(content, updates):
 
 
 def classify(lines, indent=4, line=None):
+    if not lines:
+        return {'action': None}
     first = lines[0]
     content = ''.join(lines[1:])
 
