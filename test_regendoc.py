@@ -168,6 +168,16 @@ def test_main_no_update(tmpdir):
     # check for the created tmpdir
     assert tmpdir.join('doc-exec-0').check(dir=1)
 
+def test_empty_update(tmpdir):
+    simple_fp = tmpdir.join('simple.txt')
+    simple_fp.write("")
+    _main(
+        [simple_fp],
+        should_update=True,
+        rootdir=tmpdir,
+    )
+    corrected = simple_fp.read()
+    assert corrected == ""
 
 def test_main_update(tmpdir):
     simple_fp = tmpdir.join('simple.txt')
