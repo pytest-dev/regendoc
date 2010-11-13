@@ -132,7 +132,7 @@ def do_shell(tmpdir, action):
         shell=True,
         cwd=str(cwd),
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
     )
     out, err = proc.communicate()
     # XXX join with err?
