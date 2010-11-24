@@ -14,6 +14,6 @@ setup(
             'regendoc = regendoc:main',
         ]},
     install_requires=[
-        'pylib', 'argparse'
+        'py', 'argparse'
     ],
 )
