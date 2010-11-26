@@ -234,3 +234,13 @@ py.test: no-boilerplate testing with Python
     
 .. toctree:: 
 """
+
+
+def test_wipe(tmpdir):
+    fp = tmpdir.join('simple.txt')
+    fp.write('.. regendoc:wipe\n')
+    check_file(
+        file=fp,
+        tmpdir=tmpdir)
+
+    assert not tmpdir.listdir()
