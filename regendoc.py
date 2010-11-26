@@ -103,6 +103,8 @@ def classify(lines, indent=4, line=None):
         cwd, target = first.split(' $ ')
         target = target.strip()
         return at('shell', target, cwd)
+    elif not indent and any(x.strip() == '.. regendoc:wipe' for x in lines):
+        return {'action': 'wipe'}
 
     return at(None, first)
 
@@ -145,6 +147,10 @@ def do_shell(tmpdir, action):
         printdiff(result)
         return out
 
+def do_wipe(tmpdir, action):
+    print('wiping tmpdir %s'%tmpdir)
+    for item in tmpdir.listdir():
+        item.remove()
 
 def printdiff(lines):
     mapping = {
@@ -160,8 +166,9 @@ def printdiff(lines):
 def check_file(file, tmpdir):
     needed_updates = []
     for action in actions_of(file):
-        py.builtin.print_(action['action'],
-            repr(action['target']))
+        if 'target' in action:
+            py.builtin.print_(action['action'],
+                repr(action['target']))
 
         method = globals()['do_' + action['action']]
         new_content = method(tmpdir, action)
