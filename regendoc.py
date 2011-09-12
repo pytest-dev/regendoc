@@ -156,6 +156,7 @@ def printdiff(lines):
     mapping = {
         '+': 'green',
         '-': 'red',
+        '?': 'blue',
     }
     for line in lines:
         color = mapping.get(line[0])
