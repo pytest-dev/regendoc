@@ -120,8 +120,9 @@ def actions_of(file):
 
 def do_write(tmpdir, action):
     #XXX: insecure
-    targetfile = tmpdir.join(action['target']).write(action['content'])
-
+    targetfile = tmpdir.join(action['target'])
+    targetfile.ensure()
+    targetfile.write(action['content'])
 
 def do_shell(tmpdir, action):
     if action['cwd']:
@@ -191,9 +192,11 @@ def _main(files, should_update, rootdir=None):
             tmpdir=tmpdir,
         )
         if should_update:
-            content = path.read()
-            corrected = correct_content(content, updates)
-            path.write(corrected)
+            with open(str(path), "rb") as f:
+                content = f.read()
+                corrected = correct_content(content, updates)
+            with open(str(path), "wb") as f:
+                f.write(corrected)
 
 
 def main():
