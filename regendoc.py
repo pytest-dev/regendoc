@@ -189,7 +189,7 @@ def _main(files, should_update, rootdir=None):
         path = py.path.local(name)
         updates = check_file(
             file=path,
-            tmpdir=tmpdir,
+            tmpdir=path.dirpath(), #tmpdir,
         )
         if should_update:
             with open(str(path), "rb") as f:
