@@ -1,5 +1,6 @@
 
 import py
+import pytest
 from regendoc import blocks, correct_content
 from regendoc import classify, _main
 from regendoc import check_file, actions_of
@@ -101,26 +102,52 @@ def test_classify_chdir_shell():
 
     assert cmd == expected
 
+@pytest.fixture
+def example(tmpdir):
+    p = tmpdir.join("example.txt")
+    p.write(py.std.textwrap.dedent("""\
+        a simple test function call with one argument factory
+        ==============================================================
+
+        the function argument.  Let's look at a simple self-contained
+        example that you can put into a test module::
+
+            # content of: test_simplefactory.py
+            def pytest_funcarg__myfuncarg(request):
+                return 42
+
+            def test_function(myfuncarg):
+                assert myfuncarg == 17
+
+        .. code-block:: bash
+
+            $ py.test test_simplefactory.py
+
+            output should be here - but thats nice for testing
+
+        the end.
+    """))
+    return p
 
 def test_simple_new_content(tmpdir):
-    fp = tmpdir.join('example.txt')
-    fp.write(simple)
+    example = py.io.BytesIO(simple)
     needed_update, = check_file(
-        file=fp,
+        file=example,
         tmpdir=tmpdir,
     )
 
-    expeccted_update = {
+    expected_update = {
         'action': 'shell',
         'cwd': None,
-        'file': fp,
+        'file': example,
         'target': 'echo hi',
         'content': 'oh no\n',
         'new_content': 'hi\n',
         'indent': 4,
         'line': 2,
     }
-    assert needed_update == expeccted_update
+    print needed_update
+    assert needed_update == expected_update
 
 
 def test_single_update():
@@ -138,7 +165,7 @@ def test_single_update():
     assert corrected == simple_corrected
 
 
-def test_actions_of(tmpdir):
+def test_actions_of(tmpdir, example):
 
     actions = list(actions_of(example))
 
@@ -150,7 +177,7 @@ def test_actions_of(tmpdir):
     assert interesting == expected
 
 
-def test_check_file(tmpdir):
+def test_check_file(tmpdir, example):
 
     check_file(
         file=example,
@@ -159,7 +186,7 @@ def test_check_file(tmpdir):
     assert tmpdir.join('test_simplefactory.py').check()
 
 
-def test_main_no_update(tmpdir):
+def test_main_no_update(tmpdir, example):
     _main(
         [example],
         should_update=False,
@@ -231,8 +258,8 @@ def test_parsing_problem(tmpdir):
 example_index="""
 py.test: no-boilerplate testing with Python
 ==============================================
-    
-.. toctree:: 
+
+.. toctree::
 """
 
 
