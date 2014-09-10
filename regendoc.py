@@ -136,9 +136,10 @@ def do_shell(tmpdir, action):
         cwd=str(cwd),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
+        bufsize=0,
     )
     out, err = proc.communicate()
-    # XXX join with err?
+    assert not err
     if out != action['content']:
         import difflib
         differ = difflib.Differ()
@@ -151,6 +152,8 @@ def do_shell(tmpdir, action):
 def do_wipe(tmpdir, action):
     print('wiping tmpdir %s'%tmpdir)
     for item in tmpdir.listdir():
+        assert not item.relto(py.path.local()), item
+
         item.remove()
 
 def printdiff(lines):
@@ -189,7 +192,7 @@ def _main(files, should_update, rootdir=None):
         path = py.path.local(name)
         updates = check_file(
             file=path,
-            tmpdir=path.dirpath(), #tmpdir,
+            tmpdir=tmpdir,
         )
         if should_update:
             with open(str(path), "rb") as f:
