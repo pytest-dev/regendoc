@@ -1,8 +1,8 @@
 from setuptools import setup
 
-setup(
+args = dict(
     name='RegenDoc',
-    version='0.2.dev1',
+    use_scm_version=True,
     description='a tool to check/fix simple file/shell examples'
                 ' in documentation',
     url='http://bitbucket.org/RonnyPfannschmidt/regendoc/',
@@ -14,6 +14,12 @@ setup(
             'regendoc = regendoc:main',
         ]},
     install_requires=[
-        'py', 'argparse'
+        'click',
     ],
+    setup_requires=[
+        'setuptools_scm',
+    ]
 )
+
+if __name__ == '__main__':
+    setup(**args)
