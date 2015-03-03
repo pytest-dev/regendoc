@@ -1,9 +1,11 @@
 import textwrap
 import pytest
-import io
-from regendoc import blocks, correct_content
-from regendoc import classify, main
-from regendoc import check_file, parse_actions
+
+from regendoc import (
+    blocks, correct_content,
+    classify, main,
+    check_file, parse_actions,
+)
 
 from operator import itemgetter
 a_c_t = itemgetter('action', 'target')
@@ -140,10 +142,10 @@ def example(tmpdir):
 
 
 def test_simple_new_content(tmpdir):
-    example = io.BytesIO(simple)
+
     needed_update, = check_file(
         name='example',
-        content=list(example),
+        content=simple.splitlines(True),
         tmpdir=str(tmpdir),
     )
 
@@ -235,12 +237,12 @@ def test_main_update(tmpdir, run):
 def test_docfile_chdir(tmpdir):
 
     tmpdir.ensure('nested/file').write('some text\n')
-    example = tmpdir.join('example.txt')
-    example.write('some shell test\n'
-                  '  nested $ cat file\n'
-                  '  some other text\n')
-
-    action, = list(parse_actions(example.readlines()))
+    content = [
+        'some shell test\n',
+        '  nested $ cat file\n',
+        '  some other text\n',
+    ]
+    action, = parse_actions(content)
     excpected_action = {
         'action': 'shell',
         'content': 'some other text\n',
@@ -252,7 +254,7 @@ def test_docfile_chdir(tmpdir):
     assert action == excpected_action
 
     needed_updates = check_file(
-        name='example.txt', content=example.readlines(), tmpdir=str(tmpdir))
+        name='example.txt', content=content, tmpdir=str(tmpdir))
     assert needed_updates
 
 
@@ -282,6 +284,7 @@ def test_wipe(tmpdir):
     check_file(
         name='test',
         content=fp.readlines(),
-        tmpdir=str(tmpdir)),
+        tmpdir=str(tmpdir),
+    )
 
     assert not tmpdir.listdir()

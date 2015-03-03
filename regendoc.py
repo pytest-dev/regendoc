@@ -129,6 +129,7 @@ def shell(name, tmpdir, action):
         bufsize=0,
     )
     out, err = proc.communicate()
+    out = out.decode('utf-8')
     assert not err
     if out != action['content']:
         import difflib
@@ -189,6 +190,11 @@ def check_file(name, content, tmpdir):
 @click.argument('files', nargs=-1)
 @click.option('--update', is_flag=True)
 def main(files, update, rootdir=None):
+    _main(files, update, rootdir)
+
+
+def _main(files, update, rootdir=None):
+
     tmpdir = rootdir or tempfile.mkdtmp(prefix='regendoc-exec')
     total = len(files)
     for num, name in enumerate(files):
