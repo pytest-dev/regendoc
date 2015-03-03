@@ -105,13 +105,14 @@ def parse_actions(lines):
 
 
 def write(name, tmpdir, action):
-    #XXX: insecure
+    # XXX: insecure
     target = os.path.join(tmpdir, action['target'])
     targetdir = os.path.dirname(target)
     if not os.path.isdir(targetdir):
         os.makedirs(targetdir)
     with open(target, 'w') as fp:
         fp.write(action['content'])
+
 
 def shell(name, tmpdir, action):
     if action['cwd']:
@@ -137,6 +138,7 @@ def shell(name, tmpdir, action):
         result = differ.compare(contl, outl)
         printdiff(result)
         return out
+
 
 def wipe(name, tmpdir, action):
     click.secho('wiping tmpdir %s of %s' % (tmpdir, name), bold=True)
@@ -183,7 +185,6 @@ def check_file(name, content, tmpdir):
     return needed_updates
 
 
-
 @click.command()
 @click.argument('files', nargs=-1)
 @click.option('--update', is_flag=True)
@@ -201,5 +202,5 @@ def main(files, update, rootdir=None):
         updates = check_file(name=name, content=content, tmpdir=targetdir)
         if update:
             corrected = correct_content(content, updates)
-            with open(name, "wb") as f:
+            with open(name, "w") as f:
                 f.writelines(corrected)

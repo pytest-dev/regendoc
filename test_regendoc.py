@@ -15,9 +15,8 @@ def run():
         newkw = dict((k, str(v) if not isinstance(v, bool) else v)
                      for k, v in kw.items())
         args = [str(x) for x in args]
-        main.callback(args, **kw)
+        main.callback(args, **newkw)
     return _run
-
 
 
 input_data_for_blocks = """
@@ -75,7 +74,7 @@ def test_classify_write():
         'indent': 4,
         'line': None,
     }
-    assert  write == expected
+    assert write == expected
 
 
 def test_classify_shell():
@@ -111,6 +110,7 @@ def test_classify_chdir_shell():
 
     assert cmd == expected
 
+
 @pytest.fixture
 def example(tmpdir):
     p = tmpdir.join("example.txt")
@@ -138,6 +138,7 @@ def example(tmpdir):
     """))
     return p
 
+
 def test_simple_new_content(tmpdir):
     example = io.BytesIO(simple)
     needed_update, = check_file(
@@ -155,7 +156,7 @@ def test_simple_new_content(tmpdir):
         'indent': 4,
         'line': 2,
     }
-    print needed_update
+    print(needed_update)
     assert needed_update == expected_update
 
 
@@ -221,7 +222,8 @@ def test_empty_update(tmpdir, run):
 def test_main_update(tmpdir, run):
     simple_fp = tmpdir.join('simple.txt')
     simple_fp.write(simple)
-    run(simple_fp,
+    run(
+        simple_fp,
         update=True,
         rootdir=str(tmpdir),
     )
@@ -238,7 +240,7 @@ def test_docfile_chdir(tmpdir):
                   '  nested $ cat file\n'
                   '  some other text\n')
 
-    action, = list(parse_actions(example.readlines()   ))
+    action, = list(parse_actions(example.readlines()))
     excpected_action = {
         'action': 'shell',
         'content': 'some other text\n',
@@ -258,7 +260,7 @@ def test_parsing_problem(tmpdir, run):
     simple_fp = tmpdir.join('index.txt')
     simple_fp.write(example_index)
 
-    result = run(
+    run(
         simple_fp,
         update=True,
         rootdir=str(tmpdir),
@@ -266,7 +268,7 @@ def test_parsing_problem(tmpdir, run):
     corrected = simple_fp.read()
     assert corrected == example_index
 
-example_index="""
+example_index = """
 py.test: no-boilerplate testing with Python
 ==============================================
 
@@ -279,7 +281,7 @@ def test_wipe(tmpdir):
     fp.write('.. regendoc:wipe\n')
     check_file(
         name='test',
-        content=fp.readlines() ,
+        content=fp.readlines(),
         tmpdir=str(tmpdir)),
 
     assert not tmpdir.listdir()
