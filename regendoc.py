@@ -167,9 +167,9 @@ def printdiff(lines):
     for line in lines:
         color = mapping.get(line[0])
         if color:
-            click.secho(line, fg=color, bold=True)
+            click.secho(line, fg=color, bold=True, nl=False)
         else:
-            click.echo(line)
+            click.echo(line, nl=False)
 
 
 def check_file(name, content, tmpdir):
@@ -190,12 +190,7 @@ def check_file(name, content, tmpdir):
 @click.argument('files', nargs=-1)
 @click.option('--update', is_flag=True)
 def main(files, update, rootdir=None):
-    _main(files, update, rootdir)
-
-
-def _main(files, update, rootdir=None):
-
-    tmpdir = rootdir or tempfile.mkdtmp(prefix='regendoc-exec')
+    tmpdir = rootdir or tempfile.mkdtemp(prefix='regendoc-exec')
     total = len(files)
     for num, name in enumerate(files):
         targetdir = os.path.join(tmpdir, 'doc-exec-%d' % num)
