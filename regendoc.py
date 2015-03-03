@@ -1,20 +1,8 @@
 #!/usr/bin/env python
-
-import argparse
+import os
+import click
+import tempfile
 import subprocess
-
-import py
-tw = py.io.TerminalWriter()
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--update',
-                    default=False,
-                    action='store_true',
-                    help='refresh the files instead of'
-                         ' just reporting the difference')
-parser.add_argument('files',
-                    nargs='+',
-                   help='the files to check/update')
 
 
 def dedent(line, last_indent):
@@ -65,7 +53,7 @@ def blocks(lines):
 
 def correct_content(content, updates):
 
-    lines = content.splitlines(True)
+    lines = list(content)
     for update in reversed(updates):
         line = update['line']
         old_lines = len(update['content'].splitlines())
@@ -74,7 +62,7 @@ def correct_content(content, updates):
                      for _line in update['new_content'].splitlines(1)]
         lines[line + 1:line + old_lines + 1] = new_lines
 
-    return ''.join(lines)
+    return lines
 
 
 def classify(lines, indent=4, line=None):
@@ -109,31 +97,32 @@ def classify(lines, indent=4, line=None):
     return at(None, first)
 
 
-def actions_of(file):
-    lines = file.read().splitlines(True)
+def parse_actions(lines):
     for indent, line, data in blocks(lines):
         mapping = classify(lines=data, indent=indent, line=line)
         if mapping['action']:  # None if no idea
-            mapping['file'] = file
             yield mapping
 
 
-def do_write(tmpdir, action):
+def write(name, tmpdir, action):
     #XXX: insecure
-    targetfile = tmpdir.join(action['target'])
-    targetfile.ensure()
-    targetfile.write(action['content'])
+    target = os.path.join(tmpdir, action['target'])
+    targetdir = os.path.dirname(target)
+    if not os.path.isdir(targetdir):
+        os.makedirs(targetdir)
+    with open(target, 'w') as fp:
+        fp.write(action['content'])
 
-def do_shell(tmpdir, action):
+def shell(name, tmpdir, action):
     if action['cwd']:
-        cwd = action['file'].dirpath().join(action['cwd'])
+        cwd = os.path.join(tmpdir, action['cwd'])
     else:
         cwd = tmpdir
 
     proc = subprocess.Popen(
         action['target'],
         shell=True,
-        cwd=str(cwd),
+        cwd=cwd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         bufsize=0,
@@ -149,12 +138,22 @@ def do_shell(tmpdir, action):
         printdiff(result)
         return out
 
-def do_wipe(tmpdir, action):
-    print('wiping tmpdir %s'%tmpdir)
-    for item in tmpdir.listdir():
-        assert not item.relto(py.path.local()), item
+def wipe(name, tmpdir, action):
+    click.secho('wiping tmpdir %s of %s' % (tmpdir, name), bold=True)
 
-        item.remove()
+    for item in os.listdir(tmpdir):
+        itempath = os.path.join(tmpdir, item)
+        assert os.path.relpath(itempath).startswith(
+            os.path.pardir + os.sep)
+        os.remove(itempath)
+
+
+ACTIONS = {
+    'shell': shell,
+    'wipe': wipe,
+    'write': write,
+}
+
 
 def printdiff(lines):
     mapping = {
@@ -164,48 +163,43 @@ def printdiff(lines):
     }
     for line in lines:
         color = mapping.get(line[0])
-        kw = {color: True} if color else {}
-        tw.write(line, **kw)
+        if color:
+            click.secho(line, fg=color, bold=True)
+        else:
+            click.echo(line)
 
 
-def check_file(file, tmpdir):
+def check_file(name, content, tmpdir):
     needed_updates = []
-    for action in actions_of(file):
+    for action in parse_actions(content):
         if 'target' in action:
-            py.builtin.print_(action['action'],
-                repr(action['target']))
+            click.echo('{action} {target!r}'.format(**action))
 
-        method = globals()['do_' + action['action']]
-        new_content = method(tmpdir, action)
+        method = ACTIONS[action['action']]
+        new_content = method(name, tmpdir, action)
         if new_content:
             action['new_content'] = new_content
             needed_updates.append(action)
     return needed_updates
 
 
-def _main(files, should_update, rootdir=None):
-    for name in files:
-        tw.sep('=', 'checking %s' % (name,), bold=True)
-        tmpdir = py.path.local.make_numbered_dir(
-            rootdir=rootdir,
-            prefix='doc-exec-')
-        path = py.path.local(name)
-        updates = check_file(
-            file=path,
-            tmpdir=tmpdir,
-        )
-        if should_update:
-            with open(str(path), "rb") as f:
-                content = f.read()
-                corrected = correct_content(content, updates)
-            with open(str(path), "wb") as f:
-                f.write(corrected)
 
-
-def main():
-    options = parser.parse_args()
-    return _main(options.files, should_update=options.update)
-
-
-if __name__ == '__main__':
-    main()
+@click.command()
+@click.argument('files', nargs=-1)
+@click.option('--update', is_flag=True)
+def main(files, update, rootdir=None):
+    tmpdir = rootdir or tmpfile.mkdtmp(prefix='regendoc-exec')
+    total = len(files)
+    for num, name in enumerate(files):
+        targetdir = os.path.join(tmpdir, 'doc-exec-%d' % num)
+        with open(name) as fp:
+            content = list(fp)
+        os.mkdir(targetdir)
+        click.secho(
+            '#[{num}/{total}] {name} checking'.format(
+                num=num+1, total=total, name=name), bold=True)
+        updates = check_file(name=name, content=content, tmpdir=targetdir)
+        if update:
+            corrected = correct_content(content, updates)
+            with open(name, "wb") as f:
+                f.writelines(corrected)

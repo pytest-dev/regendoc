@@ -1,14 +1,24 @@
-
-import py
+import textwrap
 import pytest
+import io
 from regendoc import blocks, correct_content
-from regendoc import classify, _main
-from regendoc import check_file, actions_of
+from regendoc import classify, main
+from regendoc import check_file, parse_actions
 
 from operator import itemgetter
 a_c_t = itemgetter('action', 'target')
 
-example = py.path.local(__file__).dirpath().join('example.txt')
+
+@pytest.fixture
+def run():
+    def _run(*args, **kw):
+        newkw = dict((k, str(v) if not isinstance(v, bool) else v)
+                     for k, v in kw.items())
+        args = [str(x) for x in args]
+        main.callback(args, **kw)
+    return _run
+
+
 
 input_data_for_blocks = """
 some text
@@ -46,7 +56,6 @@ def test_blocks():
         (0, 11, ['.. directive:: test\n']),
         (4, 12, [':param: test\n', '\n', 'text\n']),
     ]
-    py.std.pprint.pprint(result)
     assert result == expected
 
 
@@ -105,7 +114,7 @@ def test_classify_chdir_shell():
 @pytest.fixture
 def example(tmpdir):
     p = tmpdir.join("example.txt")
-    p.write(py.std.textwrap.dedent("""\
+    p.write(textwrap.dedent("""\
         a simple test function call with one argument factory
         ==============================================================
 
@@ -130,16 +139,16 @@ def example(tmpdir):
     return p
 
 def test_simple_new_content(tmpdir):
-    example = py.io.BytesIO(simple)
+    example = io.BytesIO(simple)
     needed_update, = check_file(
-        file=example,
-        tmpdir=tmpdir,
+        name='example',
+        content=list(example),
+        tmpdir=str(tmpdir),
     )
 
     expected_update = {
         'action': 'shell',
         'cwd': None,
-        'file': example,
         'target': 'echo hi',
         'content': 'oh no\n',
         'new_content': 'hi\n',
@@ -161,13 +170,13 @@ def test_single_update():
         'line': 2,
     }
 
-    corrected = correct_content(simple, [update])
-    assert corrected == simple_corrected
+    corrected = correct_content(simple.splitlines(True), [update])
+    assert corrected == simple_corrected.splitlines(True)
 
 
 def test_actions_of(tmpdir, example):
 
-    actions = list(actions_of(example))
+    actions = list(parse_actions(example.readlines()))
 
     interesting = [a_c_t(x) for x in actions]
     expected = [
@@ -180,39 +189,41 @@ def test_actions_of(tmpdir, example):
 def test_check_file(tmpdir, example):
 
     check_file(
-        file=example,
-        tmpdir=tmpdir,
+        name='test.txt',
+        content=example.readlines(),
+        tmpdir=str(tmpdir),
     )
     assert tmpdir.join('test_simplefactory.py').check()
 
 
-def test_main_no_update(tmpdir, example):
-    _main(
-        [example],
-        should_update=False,
-        rootdir=tmpdir,
+def test_main_no_update(tmpdir, example, run):
+    run(
+        example,
+        update=False,
+        rootdir=str(tmpdir),
     )
     # check for the created tmpdir
     assert tmpdir.join('doc-exec-0').check(dir=1)
 
-def test_empty_update(tmpdir):
+
+def test_empty_update(tmpdir, run):
     simple_fp = tmpdir.join('simple.txt')
     simple_fp.write("")
-    _main(
-        [simple_fp],
-        should_update=True,
-        rootdir=tmpdir,
+    run(
+        simple_fp,
+        update=True,
+        rootdir=str(tmpdir),
     )
     corrected = simple_fp.read()
     assert corrected == ""
 
-def test_main_update(tmpdir):
+
+def test_main_update(tmpdir, run):
     simple_fp = tmpdir.join('simple.txt')
     simple_fp.write(simple)
-    _main(
-        [simple_fp],
-        should_update=True,
-        rootdir=tmpdir,
+    run(simple_fp,
+        update=True,
+        rootdir=str(tmpdir),
     )
     corrected = simple_fp.read()
 
@@ -227,10 +238,9 @@ def test_docfile_chdir(tmpdir):
                   '  nested $ cat file\n'
                   '  some other text\n')
 
-    action, = list(actions_of(example))
+    action, = list(parse_actions(example.readlines()   ))
     excpected_action = {
         'action': 'shell',
-        'file': example,
         'content': 'some other text\n',
         'cwd': 'nested',
         'indent': 2,
@@ -239,18 +249,19 @@ def test_docfile_chdir(tmpdir):
     }
     assert action == excpected_action
 
-    needed_updates = check_file(example, tmpdir)
-    py.std.pprint.pprint(needed_updates)
+    needed_updates = check_file(
+        name='example.txt', content=example.readlines(), tmpdir=str(tmpdir))
     assert needed_updates
 
 
-def test_parsing_problem(tmpdir):
+def test_parsing_problem(tmpdir, run):
     simple_fp = tmpdir.join('index.txt')
     simple_fp.write(example_index)
-    _main(
-        [simple_fp],
-        should_update=True,
-        rootdir=tmpdir,
+
+    result = run(
+        simple_fp,
+        update=True,
+        rootdir=str(tmpdir),
     )
     corrected = simple_fp.read()
     assert corrected == example_index
@@ -267,7 +278,8 @@ def test_wipe(tmpdir):
     fp = tmpdir.join('simple.txt')
     fp.write('.. regendoc:wipe\n')
     check_file(
-        file=fp,
-        tmpdir=tmpdir)
+        name='test',
+        content=fp.readlines() ,
+        tmpdir=str(tmpdir)),
 
     assert not tmpdir.listdir()
