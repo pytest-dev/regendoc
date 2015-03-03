@@ -1,13 +1,13 @@
 from setuptools import setup
 
 args = dict(
-    name='RegenDoc',
+    name='regendoc',
     use_scm_version=True,
-    description='a tool to check/fix simple file/shell examples'
-                ' in documentation',
-    url='http://bitbucket.org/RonnyPfannschmidt/regendoc/',
+    description='a tool to check/update simple file/shell '
+                'examples in documentation',
+    url='http://bitbucket.org/pytest-dev/regendoc/',
     author='Ronny Pfannschmidt',
-    author_email='Ronny.Pfannschmidt@gmx.de',
+    author_email='opensource@ronnypfannschmidt.de',
     py_modules=['regendoc'],
     entry_points={
         'console_scripts': [
