@@ -2,6 +2,7 @@
 import os
 import click
 import tempfile
+import shutil
 import subprocess
 
 
@@ -148,7 +149,10 @@ def wipe(name, tmpdir, action):
         itempath = os.path.join(tmpdir, item)
         assert os.path.relpath(itempath).startswith(
             os.path.pardir + os.sep)
-        os.remove(itempath)
+        if os.path.isdir(itempath):
+            shutil.rmtree(itempath)
+        else:
+            os.remove(itempath)
 
 
 ACTIONS = {
