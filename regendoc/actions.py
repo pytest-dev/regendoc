@@ -4,8 +4,10 @@ import tempfile
 import subprocess
 import shutil
 
-def write(name, targetdir, action):
+def write(name, targetdir, action, verbose):
     # XXX: insecure
+    if verbose:
+        click.echo('write to %(target)s' % action)
     target = os.path.join(targetdir, action['target'])
     targetdir = os.path.dirname(target)
     if not os.path.isdir(targetdir):
@@ -14,7 +16,7 @@ def write(name, targetdir, action):
         fp.write(action['content'])
 
 
-def shell(name, targetdir, action):
+def shell(name, targetdir, action, verbose):
     if action['cwd']:
         # the cwd option is insecure and used for examples
         # that already have all files in place
@@ -26,9 +28,10 @@ def shell(name, targetdir, action):
     else:
         cwd = targetdir
 
-    if not os.path.isdir(cwd):
-        os.makedirs(cwd)
-
+        if not os.path.isdir(cwd):
+            os.makedirs(cwd)
+    if verbose:
+        click.echo('popen %(target)s' % action)
     proc = subprocess.Popen(
         action['target'],
         shell=True,
@@ -44,8 +47,9 @@ def shell(name, targetdir, action):
 
 
 
-def wipe(name, targetdir, action):
-    click.secho('wiping targetdir %s of %s' % (targetdir, name), bold=True)
+def wipe(name, targetdir, action, verbose):
+    if verbose:
+        click.secho('wiping targetdir %s of %s' % (targetdir, name), bold=True)
     shutil.rmtree(targetdir)
     os.mkdir(targetdir)
 

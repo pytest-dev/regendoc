@@ -20,14 +20,15 @@ def normalize_content(content, operators):
     return ''.join(result)
 
 
-def check_file(name, content, tmpdir, normalize):
+def check_file(name, content, tmpdir, normalize, verbose=True):
     needed_updates = []
     for action in parse_actions(content, file=name):
-        if 'target' in action:
-            click.echo('{action} {target!r}'.format(**action))
-
         method = ACTIONS[action['action']]
-        new_content = method(name, tmpdir, action)
+        new_content = method(
+            name=name,
+            targetdir=tmpdir,
+            action=action,
+            verbose=verbose)
         if new_content:
             action['new_content'] = normalize_content(new_content, normalize)
             needed_updates.append(action)
@@ -61,12 +62,6 @@ class Substituter(object):
         self.replace = replace
 
     @classmethod
-    def plain(cls, token, replace):
-        return cls(
-            match=re.escape(token),
-            replace=re.escape(replace))
-
-    @classmethod
     def parse(cls, s):
         parts = s.split(s[0])
         assert len(parts) == 4
@@ -89,24 +84,38 @@ class Substituter(object):
 @click.argument('files', nargs=-1)
 @click.option('--update', is_flag=True)
 @click.option('--normalize', type=Substituter.parse, multiple=True)
-def main(files, update, normalize=(), rootdir=None):
+@click.option('--verbose', default=False, is_flag=True)
+def main(files, update, normalize=(), rootdir=None, verbose=False):
     tmpdir = rootdir or tempfile.mkdtemp(prefix='regendoc-exec-')
     total = len(files)
-    for num, name in enumerate(files):
+    for num, name in enumerate(files, 1):
         targetdir = os.path.join(tmpdir, '%s-%d' % (
             os.path.basename(name), num))
         with open(name) as fp:
             content = list(fp)
         os.mkdir(targetdir)
         click.secho(
-            '#[{num}/{total}] {name} checking'.format(
-                num=num+1, total=total, name=name), bold=True)
+            '#[{num:3d}/{total:3d}] {name}'.format(
+                num=num, total=total, name=name), bold=True)
         updates = check_file(
             name=name,
             content=content,
             tmpdir=targetdir,
-            normalize=(Substituter.plain(
-                targetdir, '$REGENDOC_TMPDIR'),) + normalize,
+            normalize=(
+                Substituter(
+                    match=re.escape(targetdir),
+                    replace='$REGENDOC_TMPDIR',
+                ),
+                Substituter(
+                    match=re.escape(os.getcwd()),
+                    replace='$PWD',
+                ),
+                Substituter(
+                    match='at 0x[0-9a-f]+>',
+                    replace='at 0xdeadbeef>',
+                )
+            ) + normalize,
+            verbose=verbose,
         )
         for action in updates:
             if action['content'] is None or action['new_content'] is None:
