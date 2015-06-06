@@ -214,7 +214,7 @@ def test_main_no_update(tmpdir, example, run):
     )
     # check for the created tmpdir
 
-    assert tmpdir.join('example.txt-0').check(dir=1)
+    assert tmpdir.join('example.txt-1').check(dir=1)
 
 
 def test_empty_update(tmpdir, run):
@@ -242,9 +242,10 @@ def test_main_update(tmpdir, run):
     assert corrected == simple_corrected
 
 
-def test_docfile_chdir(tmpdir):
+def test_docfile_chdir(tmpdir, monkeypatch):
 
     tmpdir.ensure('nested/file').write('some text\n')
+    monkeypatch.chdir(tmpdir)
     filename = str(tmpdir.join('test.txt'))
     content = [
         'some shell test\n',
@@ -267,10 +268,12 @@ def test_docfile_chdir(tmpdir):
     needed_updates = check_file(
         name='example.txt',
         content=content,
-        tmpdir=str(tmpdir),
+        tmpdir=str(tmpdir.join('tmp')),
         normalize=[],)
-    assert needed_updates
 
+    assert needed_updates
+    # is it copied?
+    assert tmpdir.join('tmp/nested/file').check()
 
 def test_parsing_problem(tmpdir, run):
     simple_fp = tmpdir.join('index.txt')
