@@ -1,10 +1,15 @@
 import textwrap
 import pytest
 
-from regendoc import (
+from regendoc.parse import(
     blocks, correct_content,
-    classify, main,
-    check_file, parse_actions,
+    classify, parse_actions,
+)
+
+from regendoc import (
+
+    main,
+    check_file,
 )
 
 from operator import itemgetter
