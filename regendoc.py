@@ -3,6 +3,7 @@ import os
 import click
 import tempfile
 import subprocess
+import shutil
 
 
 def dedent(line, last_indent):
@@ -104,9 +105,9 @@ def parse_actions(lines):
             yield mapping
 
 
-def write(name, tmpdir, action):
+def write(name, targetdir, action):
     # XXX: insecure
-    target = os.path.join(tmpdir, action['target'])
+    target = os.path.join(targetdir, action['target'])
     targetdir = os.path.dirname(target)
     if not os.path.isdir(targetdir):
         os.makedirs(targetdir)
@@ -114,11 +115,11 @@ def write(name, tmpdir, action):
         fp.write(action['content'])
 
 
-def shell(name, tmpdir, action):
+def shell(name, targetdir, action):
     if action['cwd']:
-        cwd = os.path.join(tmpdir, action['cwd'])
+        cwd = os.path.join(targetdir, action['cwd'])
     else:
-        cwd = tmpdir
+        cwd = targetdir
 
     proc = subprocess.Popen(
         action['target'],
@@ -141,14 +142,10 @@ def shell(name, tmpdir, action):
         return out
 
 
-def wipe(name, tmpdir, action):
-    click.secho('wiping tmpdir %s of %s' % (tmpdir, name), bold=True)
-
-    for item in os.listdir(tmpdir):
-        itempath = os.path.join(tmpdir, item)
-        assert os.path.relpath(itempath).startswith(
-            os.path.pardir + os.sep)
-        os.remove(itempath)
+def wipe(name, targetdir, action):
+    click.secho('wiping targetdir %s of %s' % (targetdir, name), bold=True)
+    shutil.rmtree(targetdir)
+    os.mkdir(targetdir)
 
 
 ACTIONS = {
@@ -193,7 +190,8 @@ def main(files, update, rootdir=None):
     tmpdir = rootdir or tempfile.mkdtemp(prefix='regendoc-exec')
     total = len(files)
     for num, name in enumerate(files):
-        targetdir = os.path.join(tmpdir, 'doc-exec-%d' % num)
+        targetdir = os.path.join(tmpdir, '%s-%d' % (
+            os.path.basename(name), num))
         with open(name) as fp:
             content = list(fp)
         os.mkdir(targetdir)

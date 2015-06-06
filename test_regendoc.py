@@ -206,7 +206,8 @@ def test_main_no_update(tmpdir, example, run):
         rootdir=str(tmpdir),
     )
     # check for the created tmpdir
-    assert tmpdir.join('doc-exec-0').check(dir=1)
+
+    assert tmpdir.join('example.txt-0').check(dir=1)
 
 
 def test_empty_update(tmpdir, run):
