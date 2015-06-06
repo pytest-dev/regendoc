@@ -35,7 +35,8 @@ def check_file(name, content, tmpdir, normalize, verbose=True):
     return needed_updates
 
 
-def print_diff(content, out):
+def print_diff(action):
+    content, out = action['content'], action['new_content']
     if out != content:
         import difflib
         differ = difflib.Differ()
@@ -48,6 +49,8 @@ def print_diff(content, out):
             '-': 'red',
             '?': 'blue',
         }
+        if lines:
+            click.secho("$ " + action['target'], bold=True, fg='blue')
         for line in lines:
             color = mapping.get(line[0])
             if color:
@@ -120,7 +123,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
         for action in updates:
             if action['content'] is None or action['new_content'] is None:
                 continue
-            print_diff(action['content'], action['new_content'])
+            print_diff(action)
         if update:
             corrected = correct_content(content, updates)
             with open(name, "w") as f:
