@@ -19,6 +19,7 @@ def shell(name, targetdir, action):
         # the cwd option is insecure and used for examples
         # that already have all files in place
         # like an examples folder for example
+        # in future this should probaly copy the tree to the targetdir
         cwd = os.path.join(
             os.path.dirname(action['file']),
             action['cwd'])
