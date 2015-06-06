@@ -17,25 +17,29 @@ def write(name, targetdir, action, verbose):
 
 
 def shell(name, targetdir, action, verbose):
+
+
     if action['cwd']:
         # the cwd option is insecure and used for examples
         # that already have all files in place
         # like an examples folder for example
-        # in future this should probaly copy the tree to the targetdir
-        cwd = os.path.join(
-            os.path.dirname(action['file']),
-            action['cwd'])
-    else:
-        cwd = targetdir
 
-        if not os.path.isdir(cwd):
-            os.makedirs(cwd)
+        src = os.path.join(
+            os.path.abspath(
+                os.path.dirname(action['file'])),
+            action['cwd'])
+        targetdir = os.path.join(targetdir, action['cwd'])
+        shutil.copytree(src, targetdir)
+
+    if not os.path.isdir(targetdir):
+        os.makedirs(targetdir)
+
     if verbose:
         click.echo('popen %(target)s' % action)
     proc = subprocess.Popen(
         action['target'],
         shell=True,
-        cwd=cwd,
+        cwd=targetdir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         bufsize=0,
