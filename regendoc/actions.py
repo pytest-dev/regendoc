@@ -16,9 +16,17 @@ def write(name, targetdir, action):
 
 def shell(name, targetdir, action):
     if action['cwd']:
-        cwd = os.path.join(targetdir, action['cwd'])
+        # the cwd option is insecure and used for examples
+        # that already have all files in place
+        # like an examples folder for example
+        cwd = os.path.join(
+            os.path.dirname(action['file']),
+            action['cwd'])
     else:
         cwd = targetdir
+
+    if not os.path.isdir(cwd):
+        os.makedirs(cwd)
 
     proc = subprocess.Popen(
         action['target'],
@@ -31,7 +39,6 @@ def shell(name, targetdir, action):
     out, err = proc.communicate()
     out = out.decode('utf-8')
     assert not err
-    printdiff(action['content'], out)
     return out
 
 
@@ -47,24 +54,3 @@ ACTIONS = {
     'wipe': wipe,
     'write': write,
 }
-
-
-def printdiff(content, out):
-    if out != content:
-        import difflib
-        differ = difflib.Differ()
-        outl = out.splitlines(True)
-        contl = content.splitlines(True)
-        lines = differ.compare(contl, outl)
-
-        mapping = {
-            '+': 'green',
-            '-': 'red',
-            '?': 'blue',
-        }
-        for line in lines:
-            color = mapping.get(line[0])
-            if color:
-                click.secho(line, fg=color, bold=True, nl=False)
-            else:
-                click.echo(line, nl=False)
