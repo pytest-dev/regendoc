@@ -1,9 +1,6 @@
 import os
-import sys
 import click
 import tempfile
-import subprocess
-import shutil
 import re
 
 from .parse import parse_actions, correct_content
@@ -79,8 +76,6 @@ class Substituter(object):
     def __repr__(self):
         return '<Substituter {self.match!r} to {self.replace!r}>'.format(
             self=self)
-
-
 
 
 @click.command()
