@@ -7,7 +7,6 @@ from regendoc.parse import(
 )
 
 from regendoc import (
-
     main,
     check_file,
 )
