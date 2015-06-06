@@ -1,6 +1,7 @@
 .*\.egg-info
-^dist
-^build
+^dist/
+^build/
 ^MANIFEST$
-^\.tox
-.eggs/
+^\.tox/
+^\.eggs/
+^\.env/
