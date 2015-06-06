@@ -48,7 +48,6 @@ def correct_content(content, updates):
 
     lines = list(content)
     for update in reversed(updates):
-        print update
         line = update['line']
         old_lines = len(update['content'].splitlines())
         indent = ' ' * update['indent']
