@@ -275,6 +275,7 @@ def test_docfile_chdir(tmpdir, monkeypatch):
     # is it copied?
     assert tmpdir.join('tmp/nested/file').check()
 
+
 def test_parsing_problem(tmpdir, run):
     simple_fp = tmpdir.join('index.txt')
     simple_fp.write(example_index)

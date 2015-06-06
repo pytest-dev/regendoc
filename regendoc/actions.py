@@ -1,8 +1,8 @@
 import os
 import click
-import tempfile
 import subprocess
 import shutil
+
 
 def write(name, targetdir, action, verbose):
     # XXX: insecure
@@ -17,8 +17,6 @@ def write(name, targetdir, action, verbose):
 
 
 def shell(name, targetdir, action, verbose):
-
-
     if action['cwd']:
         # the cwd option is insecure and used for examples
         # that already have all files in place
@@ -48,7 +46,6 @@ def shell(name, targetdir, action, verbose):
     out = out.decode('utf-8')
     assert not err
     return out
-
 
 
 def wipe(name, targetdir, action, verbose):
