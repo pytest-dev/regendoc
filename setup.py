@@ -8,7 +8,7 @@ args = dict(
     url='http://bitbucket.org/pytest-dev/regendoc/',
     author='Ronny Pfannschmidt',
     author_email='opensource@ronnypfannschmidt.de',
-    py_modules=['regendoc'],
+    packages=['regendoc'],
     entry_points={
         'console_scripts': [
             'regendoc = regendoc:main',
