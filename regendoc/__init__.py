@@ -56,11 +56,24 @@ def print_diff(content, out):
 
 
 class Substituter(object):
-    def __init__(self, s):
+    def __init__(self, match, replace):
+        self.match = match
+        self.replace = replace
+
+    @classmethod
+    def plain(cls, token, replace):
+        return cls(
+            match=re.escape(token),
+            replace=re.escape(replace))
+
+    @classmethod
+    def parse(cls, s):
         parts = s.split(s[0])
         assert len(parts) == 4
-        self.match = parts[1]
-        self.replace = parts[2]
+        return cls(
+            match=parts[1],
+            replace=parts[2],
+        )
 
     def __call__(self, line):
         return re.sub(self.match, self.replace, line)
@@ -75,7 +88,7 @@ class Substituter(object):
 @click.command()
 @click.argument('files', nargs=-1)
 @click.option('--update', is_flag=True)
-@click.option('--normalize', type=Substituter, multiple=True)
+@click.option('--normalize', type=Substituter.parse, multiple=True)
 def main(files, update, normalize=(), rootdir=None):
     tmpdir = rootdir or tempfile.mkdtemp(prefix='regendoc-exec-')
     total = len(files)
@@ -92,7 +105,8 @@ def main(files, update, normalize=(), rootdir=None):
             name=name,
             content=content,
             tmpdir=targetdir,
-            normalize=normalize,
+            normalize=(Substituter.plain(
+                targetdir, '$REGENDOC_TMPDIR'),) + normalize,
         )
         for update in updates:
             if update['content'] is None or update['new_content'] is None:
