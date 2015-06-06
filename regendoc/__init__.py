@@ -108,10 +108,10 @@ def main(files, update, normalize=(), rootdir=None):
             normalize=(Substituter.plain(
                 targetdir, '$REGENDOC_TMPDIR'),) + normalize,
         )
-        for update in updates:
-            if update['content'] is None or update['new_content'] is None:
+        for action in updates:
+            if action['content'] is None or action['new_content'] is None:
                 continue
-            print_diff(update['content'], update['new_content'])
+            print_diff(action['content'], action['new_content'])
         if update:
             corrected = correct_content(content, updates)
             with open(name, "w") as f:
