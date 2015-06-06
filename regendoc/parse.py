@@ -48,6 +48,7 @@ def correct_content(content, updates):
 
     lines = list(content)
     for update in reversed(updates):
+        print update
         line = update['line']
         old_lines = len(update['content'].splitlines())
         indent = ' ' * update['indent']
@@ -90,8 +91,9 @@ def classify(lines, indent=4, line=None):
     return at(None, first)
 
 
-def parse_actions(lines):
+def parse_actions(lines, **kw):
     for indent, line, data in blocks(lines):
         mapping = classify(lines=data, indent=indent, line=line)
+        mapping.update(kw)
         if mapping['action']:  # None if no idea
             yield mapping

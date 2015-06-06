@@ -151,11 +151,13 @@ def test_simple_new_content(tmpdir):
         name='example',
         content=simple.splitlines(True),
         tmpdir=str(tmpdir),
+        normalize=[],
     )
 
     expected_update = {
         'action': 'shell',
         'cwd': None,
+        'file': 'example',
         'target': 'echo hi',
         'content': 'oh no\n',
         'new_content': 'hi\n',
@@ -199,6 +201,7 @@ def test_check_file(tmpdir, example):
         name='test.txt',
         content=example.readlines(),
         tmpdir=str(tmpdir),
+        normalize=[],
     )
     assert tmpdir.join('test_simplefactory.py').check()
 
@@ -242,16 +245,19 @@ def test_main_update(tmpdir, run):
 def test_docfile_chdir(tmpdir):
 
     tmpdir.ensure('nested/file').write('some text\n')
+    filename = str(tmpdir.join('test.txt'))
     content = [
         'some shell test\n',
         '  nested $ cat file\n',
         '  some other text\n',
     ]
-    action, = parse_actions(content)
+
+    action, = parse_actions(content, file=filename)
     excpected_action = {
         'action': 'shell',
         'content': 'some other text\n',
         'cwd': 'nested',
+        'file': filename,
         'indent': 2,
         'line': 1,
         'target': 'cat file',
@@ -259,7 +265,10 @@ def test_docfile_chdir(tmpdir):
     assert action == excpected_action
 
     needed_updates = check_file(
-        name='example.txt', content=content, tmpdir=str(tmpdir))
+        name='example.txt',
+        content=content,
+        tmpdir=str(tmpdir),
+        normalize=[],)
     assert needed_updates
 
 
@@ -290,6 +299,7 @@ def test_wipe(tmpdir):
         name='test',
         content=fp.readlines(),
         tmpdir=str(tmpdir),
+        normalize=[],
     )
 
     assert not tmpdir.listdir()
