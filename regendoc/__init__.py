@@ -109,7 +109,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
                     replace='$PWD',
                 ),
                 Substituter(
-                    match='at 0x[0-9a-f]+>',
+                    match='at 0x\w+>',
                     replace='at 0xdeadbeef>',
                 )
             ) + normalize,
