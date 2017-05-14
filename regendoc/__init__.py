@@ -89,7 +89,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
     for num, name in enumerate(files, 1):
         targetdir = os.path.join(tmpdir, '%s-%d' % (
             os.path.basename(name), num))
-        with open(name) as fp:
+        with open(name, encoding='UTF-8') as fp:
             content = list(fp)
         os.mkdir(targetdir)
         click.secho(
@@ -121,5 +121,5 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
             print_diff(action)
         if update:
             corrected = correct_content(content, updates)
-            with open(name, "w") as f:
+            with open(name, "w", encoding='UTF-8') as f:
                 f.writelines(corrected)
