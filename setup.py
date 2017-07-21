@@ -5,7 +5,7 @@ args = dict(
     use_scm_version=True,
     description='a tool to check/update simple file/shell '
                 'examples in documentation',
-    url='http://bitbucket.org/pytest-dev/regendoc/',
+    url='http://github.com/pytest-dev/regendoc/',
     author='Ronny Pfannschmidt',
     author_email='opensource@ronnypfannschmidt.de',
     packages=['regendoc'],
