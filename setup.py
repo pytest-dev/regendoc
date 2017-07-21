@@ -9,6 +9,7 @@ args = dict(
     author='Ronny Pfannschmidt',
     author_email='opensource@ronnypfannschmidt.de',
     packages=['regendoc'],
+    license="mplV2.0",
     entry_points={
         'console_scripts': [
             'regendoc = regendoc:main',
