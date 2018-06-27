@@ -70,6 +70,14 @@ class Substituter(object):
         return "<Substituter {self.match!r} to {self.replace!r}>".format(self=self)
 
 
+def default_substituters(targetdir):
+    return [
+        Substituter(match=re.escape(targetdir), replace="$REGENDOC_TMPDIR"),
+        Substituter(match=re.escape(os.getcwd()), replace="$PWD"),
+        Substituter(match=r"at 0x\w+>", replace="at 0xdeadbeef>"),
+    ]
+
+
 @click.command()
 @click.argument("files", nargs=-1)
 @click.option("--update", is_flag=True)
@@ -91,12 +99,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
             name=name,
             content=content,
             tmpdir=targetdir,
-            normalize=[
-                Substituter(match=re.escape(targetdir), replace="$REGENDOC_TMPDIR"),
-                Substituter(match=re.escape(os.getcwd()), replace="$PWD"),
-                Substituter(match="at 0x\w+>", replace="at 0xdeadbeef>"),
-            ]
-            + list(normalize),
+            normalize=default_substituters(targetdir) + list(normalize),
             verbose=verbose,
         )
         for action in updates:
