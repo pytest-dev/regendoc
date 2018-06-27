@@ -47,6 +47,15 @@ an echo:
 simple_corrected = simple.replace("oh no", "hi")
 
 
+indented = r"""
+an extra echo:
+    $ echo -e hi\\n\\nextra hi
+    hi
+
+    extra hi
+"""
+
+
 def test_blocks():
     result = blocks(input_data_for_blocks.splitlines(True))
     expected = [
@@ -158,7 +167,6 @@ def test_simple_new_content(tmpdir):
 
 
 def test_single_update():
-
     update = {
         "action": "shell",
         "target": "echo hi",
@@ -170,6 +178,14 @@ def test_single_update():
 
     corrected = correct_content(simple.splitlines(True), [update])
     assert corrected == simple_corrected.splitlines(True)
+
+
+def test_stripped_whitespace_no_update(tmpdir):
+    raw = indented.splitlines(True)
+    action, = check_file(name="example", content=raw, tmpdir=str(tmpdir), normalize=[])
+    assert action["content"] == action["new_content"]
+    corrected = correct_content(raw, [action])
+    assert raw == corrected
 
 
 def test_actions_of(tmpdir, example):
