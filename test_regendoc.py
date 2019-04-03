@@ -150,7 +150,7 @@ def test_simple_new_content(tmpdir):
     needed_update, = check_file(
         name='example',
         content=simple.splitlines(True),
-        tmpdir=str(tmpdir),
+        tmp_dir=str(tmpdir),
         normalize=[],
     )
 
@@ -200,7 +200,7 @@ def test_check_file(tmpdir, example):
     check_file(
         name='test.txt',
         content=example.readlines(),
-        tmpdir=str(tmpdir),
+        tmp_dir=str(tmpdir),
         normalize=[],
     )
     assert tmpdir.join('test_simplefactory.py').check()
@@ -268,12 +268,13 @@ def test_docfile_chdir(tmpdir, monkeypatch):
     needed_updates = check_file(
         name='example.txt',
         content=content,
-        tmpdir=str(tmpdir.join('tmp')),
+        tmp_dir=str(tmpdir.join('tmp')),
         normalize=[],)
 
     assert needed_updates
     # is it copied?
     assert tmpdir.join('tmp/nested/file').check()
+
 
 def test_parsing_problem(tmpdir, run):
     simple_fp = tmpdir.join('index.txt')
@@ -301,8 +302,18 @@ def test_wipe(tmpdir):
     check_file(
         name='test',
         content=fp.readlines(),
-        tmpdir=str(tmpdir),
+        tmp_dir=str(tmpdir),
         normalize=[],
     )
 
     assert not tmpdir.listdir()
+
+
+def test_dotcwd(tmpdir):
+    name = str(tmpdir.ensure('src/file'))
+    check_file(
+        name=name,
+        content=['   . $ echo hi'],
+        tmp_dir=str(tmpdir.ensure('tmp', dir=True)),
+        normalize=[],
+    )

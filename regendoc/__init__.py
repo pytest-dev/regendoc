@@ -1,9 +1,6 @@
 import os
-import sys
 import click
 import tempfile
-import subprocess
-import shutil
 import re
 
 from .parse import parse_actions, correct_content
@@ -20,13 +17,13 @@ def normalize_content(content, operators):
     return ''.join(result)
 
 
-def check_file(name, content, tmpdir, normalize, verbose=True):
+def check_file(name, content, tmp_dir, normalize, verbose=True):
     needed_updates = []
     for action in parse_actions(content, file=name):
         method = ACTIONS[action['action']]
         new_content = method(
             name=name,
-            targetdir=tmpdir,
+            target_dir=tmp_dir,
             action=action,
             verbose=verbose)
         if new_content:
@@ -81,8 +78,6 @@ class Substituter(object):
             self=self)
 
 
-
-
 @click.command()
 @click.argument('files', nargs=-1)
 @click.option('--update', is_flag=True)
@@ -103,7 +98,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
         updates = check_file(
             name=name,
             content=content,
-            tmpdir=targetdir,
+            tmp_dir=targetdir,
             normalize=(
                 Substituter(
                     match=re.escape(targetdir),
@@ -123,6 +118,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
         for action in updates:
             if action['content'] is None or action['new_content'] is None:
                 continue
+
             print_diff(action)
         if update:
             corrected = correct_content(content, updates)

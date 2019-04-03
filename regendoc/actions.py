@@ -1,65 +1,68 @@
 import os
 import click
-import tempfile
 import subprocess
 import shutil
 
-def write(name, targetdir, action, verbose):
+
+def write(name, target_dir, action, verbose):
     # XXX: insecure
     if verbose:
         click.echo('write to %(target)s' % action)
-    target = os.path.join(targetdir, action['target'])
-    targetdir = os.path.dirname(target)
-    if not os.path.isdir(targetdir):
-        os.makedirs(targetdir)
+    target = os.path.join(target_dir, action['target'])
+    target_dir = os.path.dirname(target)
+    if not os.path.isdir(target_dir):
+        os.makedirs(target_dir)
     with open(target, 'w') as fp:
         fp.write(action['content'])
 
 
-def shell(name, targetdir, action, verbose):
-
-
+def process(name, target_dir, action, verbose):
     if action['cwd']:
         # the cwd option is insecure and used for examples
         # that already have all files in place
         # like an examples folder for example
+        if action['cwd'] == '.':
+            src = os.path.abspath(os.path.dirname(action['file']))
 
-        src = os.path.join(
-            os.path.abspath(
-                os.path.dirname(action['file'])),
-            action['cwd'])
-        targetdir = os.path.join(targetdir, action['cwd'])
-        shutil.copytree(src, targetdir)
+            target_dir = os.path.join(target_dir, 'CWD')
+        else:
+            src = os.path.join(
+                os.path.abspath(os.path.dirname(action['file'])),
+                action['cwd'])
 
-    if not os.path.isdir(targetdir):
-        os.makedirs(targetdir)
+            target_dir = os.path.join(target_dir, action['cwd'])
+
+        shutil.copytree(src, target_dir)
+
+    if not os.path.isdir(target_dir):
+        os.makedirs(target_dir)
 
     if verbose:
         click.echo('popen %(target)s' % action)
-    proc = subprocess.Popen(
+    process = subprocess.Popen(
         action['target'],
         shell=True,
-        cwd=targetdir,
+        cwd=target_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         bufsize=0,
     )
-    out, err = proc.communicate()
+    out, err = process.communicate()
     out = out.decode('utf-8')
     assert not err
     return out
 
 
-
-def wipe(name, targetdir, action, verbose):
+def wipe(name, target_dir, action, verbose):
     if verbose:
-        click.secho('wiping targetdir %s of %s' % (targetdir, name), bold=True)
-    shutil.rmtree(targetdir)
-    os.mkdir(targetdir)
+        click.secho('wiping targetdir %s of %s' % (target_dir, name),
+                    bold=True)
+    shutil.rmtree(target_dir)
+    os.mkdir(target_dir)
 
 
 ACTIONS = {
-    'shell': shell,
+    'shell': process,
     'wipe': wipe,
     'write': write,
 }
