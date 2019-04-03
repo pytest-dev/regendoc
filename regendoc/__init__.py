@@ -17,13 +17,13 @@ def normalize_content(content, operators):
     return ''.join(result)
 
 
-def check_file(name, content, tmpdir, normalize, verbose=True):
+def check_file(name, content, tmp_dir, normalize, verbose=True):
     needed_updates = []
     for action in parse_actions(content, file=name):
         method = ACTIONS[action['action']]
         new_content = method(
             name=name,
-            targetdir=tmpdir,
+            target_dir=tmp_dir,
             action=action,
             verbose=verbose)
         if new_content:
@@ -89,7 +89,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
     for num, name in enumerate(files, 1):
         targetdir = os.path.join(tmpdir, '%s-%d' % (
             os.path.basename(name), num))
-        with open(name, encoding='UTF-8') as fp:
+        with open(name) as fp:
             content = list(fp)
         os.mkdir(targetdir)
         click.secho(
@@ -98,7 +98,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
         updates = check_file(
             name=name,
             content=content,
-            tmpdir=targetdir,
+            tmp_dir=targetdir,
             normalize=(
                 Substituter(
                     match=re.escape(targetdir),
@@ -109,7 +109,7 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
                     replace='$PWD',
                 ),
                 Substituter(
-                    match='at 0x\w+>',
+                    match='at 0x[0-9a-f]+>',
                     replace='at 0xdeadbeef>',
                 )
             ) + normalize,
@@ -118,8 +118,9 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
         for action in updates:
             if action['content'] is None or action['new_content'] is None:
                 continue
+
             print_diff(action)
         if update:
             corrected = correct_content(content, updates)
-            with open(name, "w", encoding='UTF-8') as f:
+            with open(name, "w") as f:
                 f.writelines(corrected)
