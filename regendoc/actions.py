@@ -25,7 +25,7 @@ def shell(name, targetdir, action, verbose):
         src = os.path.join(
             os.path.abspath(os.path.dirname(action["file"])), action["cwd"]
         )
-        targetdir = os.path.join(targetdir, action["cwd"])
+        targetdir = os.path.abspath(os.path.join(targetdir, action["cwd"]))
         if os.path.isdir(targetdir):
             shutil.rmtree(targetdir)
         shutil.copytree(src, targetdir)
