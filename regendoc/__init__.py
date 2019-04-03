@@ -1,3 +1,4 @@
+import sys
 import os
 import click
 import tempfile
@@ -103,6 +104,10 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
                 Substituter(
                     match=re.escape(targetdir),
                     replace='$REGENDOC_TMPDIR',
+                ),
+                Substituter(
+                    match=re.escape(sys.prefix),
+                    replace='$PYTHON_PREFIX',
                 ),
                 Substituter(
                     match=re.escape(os.getcwd()),
