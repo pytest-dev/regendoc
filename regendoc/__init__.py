@@ -1,3 +1,4 @@
+import sys
 import os
 import click
 import tempfile
@@ -18,12 +19,12 @@ def normalize_content(content, operators):
     return "".join(result)
 
 
-def check_file(name, content, tmpdir, normalize, verbose=True):
+def check_file(name, content, tmp_dir, normalize, verbose=True):
     needed_updates = []
     for action in parse_actions(content, file=name):
         method = ACTIONS[action["action"]]
         new_content = method(
-            name=name, targetdir=tmpdir, action=action, verbose=verbose
+            name=name, target_dir=tmp_dir, action=action, verbose=verbose
         )
         if new_content:
             action["new_content"] = normalize_content(new_content, normalize)
@@ -74,7 +75,8 @@ def default_substituters(targetdir):
     return [
         Substituter(match=re.escape(targetdir), replace="/path/to/example"),
         Substituter(match=re.escape(os.getcwd()), replace="$PWD"),
-        Substituter(match=r"at 0x\w+>", replace="at 0xdeadbeef>"),
+        Substituter(match=r"at 0x[0-9a-f]+>", replace="at 0xdeadbeef>"),
+        Substituter(match=re.escape(sys.prefix), replace='$PYTHON_PREFIX'),
     ]
 
 
@@ -98,13 +100,14 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
         updates = check_file(
             name=name,
             content=content,
-            tmpdir=targetdir,
+            tmp_dir=targetdir,
             normalize=default_substituters(targetdir) + list(normalize),
             verbose=verbose,
         )
         for action in updates:
             if action["content"] is None or action["new_content"] is None:
                 continue
+
             print_diff(action)
         if update:
             corrected = correct_content(content, updates)

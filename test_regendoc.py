@@ -148,7 +148,7 @@ def test_simple_new_content(tmpdir):
     needed_update, = check_file(
         name="example",
         content=simple.splitlines(True),
-        tmpdir=str(tmpdir),
+        tmp_dir=str(tmpdir),
         normalize=[],
     )
 
@@ -182,7 +182,7 @@ def test_single_update():
 
 def test_stripped_whitespace_no_update(tmpdir):
     raw = indented.splitlines(True)
-    action, = check_file(name="example", content=raw, tmpdir=str(tmpdir), normalize=[])
+    action, = check_file(name="example", content=raw, tmp_dir=str(tmpdir), normalize=[])
     assert action["content"] == action["new_content"]
     corrected = correct_content(raw, [action])
     assert raw == corrected
@@ -204,7 +204,7 @@ def test_actions_of(tmpdir, example):
 def test_check_file(tmpdir, example):
 
     check_file(
-        name="test.txt", content=example.readlines(), tmpdir=str(tmpdir), normalize=[]
+        name="test.txt", content=example.readlines(), tmp_dir=str(tmpdir), normalize=[]
     )
     assert tmpdir.join("test_simplefactory.py").check()
 
@@ -255,7 +255,7 @@ def test_docfile_chdir(tmpdir, monkeypatch):
     needed_updates = check_file(
         name="example.txt",
         content=content,
-        tmpdir=str(tmpdir.join("tmp")),
+        tmp_dir=str(tmpdir.join("tmp")),
         normalize=[],
     )
 
@@ -284,6 +284,16 @@ py.test: no-boilerplate testing with Python
 def test_wipe(tmpdir):
     fp = tmpdir.join("simple.txt")
     fp.write(".. regendoc:wipe\n")
-    check_file(name="test", content=fp.readlines(), tmpdir=str(tmpdir), normalize=[])
+    check_file(name="test", content=fp.readlines(), tmp_dir=str(tmpdir), normalize=[])
 
     assert not tmpdir.listdir()
+
+
+def test_dotcwd(tmpdir):
+    name = str(tmpdir.ensure('src/file'))
+    check_file(
+        name=name,
+        content=['   . $ echo hi'],
+        tmp_dir=str(tmpdir.ensure('tmp', dir=True)),
+        normalize=[],
+    )
