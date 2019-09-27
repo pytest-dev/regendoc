@@ -1,0 +1,12 @@
+dist: xenial
+language: python
+sudo: false
+python:
+  - "2.7"
+  - "3.4"
+  - "3.7"
+  - "nightly"
+  - "pypy2.7-7.1.1"
+  - "pypy3.5-7.0"
+install: travis_retry pip install tox tox-travis
+script: travis_retry tox -- -v
