@@ -40,18 +40,17 @@ def process(name, target_dir, action, verbose):
     target = action["target"]
     if verbose:
         click.echo(f"popen {target} cwd={target_dir}" % action)
-    process = subprocess.Popen(
+    output = subprocess.run(
         action["target"],
         shell=True,
         cwd=target_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         bufsize=0,
+        encoding="utf-8",
     )
-    out, err = process.communicate()
-    out = out.decode("utf-8")
-    assert not err
-    return out
+    
+    return output.stdout
 
 
 def wipe(name, target_dir, action, verbose):
