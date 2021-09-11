@@ -49,7 +49,7 @@ def process(name, target_dir, action, verbose):
         bufsize=0,
         encoding="utf-8",
     )
-    
+
     return output.stdout
 
 
