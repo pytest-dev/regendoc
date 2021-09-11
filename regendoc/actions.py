@@ -2,9 +2,10 @@ import os
 import click
 import subprocess
 import shutil
+from pathlib import Path
 
 
-def write(name, target_dir, action, verbose):
+def write(name, target_dir: Path, action, verbose):
     # XXX: insecure
     if verbose:
         click.echo("write to %(target)s" % action)
@@ -21,24 +22,24 @@ def process(name, target_dir, action, verbose):
         # the cwd option is insecure and used for examples
         # that already have all files in place
         # like an examples folder for example
-        if action['cwd'] == '.':
-            src = os.path.abspath(os.path.dirname(action['file']))
+        if action["cwd"] == ".":
+            src = os.path.abspath(os.path.dirname(action["file"]))
 
-            target_dir = os.path.join(target_dir, 'CWD')
+            target_dir = os.path.join(target_dir, "CWD")
         else:
             src = os.path.join(
-                os.path.abspath(os.path.dirname(action['file'])),
-                action['cwd'])
+                os.path.abspath(os.path.dirname(action["file"])), action["cwd"]
+            )
 
-            target_dir = os.path.join(target_dir, action['cwd'])
+            target_dir = os.path.join(target_dir, action["cwd"])
 
         shutil.copytree(src, target_dir)
 
     if not os.path.isdir(target_dir):
         os.makedirs(target_dir)
-
+    target = action["target"]
     if verbose:
-        click.echo("popen %(target)s" % action)
+        click.echo(f"popen {target} cwd={target_dir}" % action)
     process = subprocess.Popen(
         action["target"],
         shell=True,
@@ -55,7 +56,7 @@ def process(name, target_dir, action, verbose):
 
 def wipe(name, target_dir, action, verbose):
     if verbose:
-        click.secho("wiping targetdir {} of {}".format(target_dir, name), bold=True)
+        click.secho(f"wiping targetdir {target_dir} of {name}", bold=True)
     shutil.rmtree(target_dir)
     os.mkdir(target_dir)
 

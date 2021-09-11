@@ -1,12 +1,14 @@
 import sys
 import os
+from collections import defaultdict
+
 import click
 import tempfile
 import re
-import io
-
+from pathlib import Path
 from .parse import parse_actions, correct_content
 from .actions import ACTIONS
+from itertools import count
 
 
 def normalize_content(content, operators):
@@ -19,7 +21,7 @@ def normalize_content(content, operators):
     return "".join(result)
 
 
-def check_file(name, content, tmp_dir, normalize, verbose=True):
+def check_file(name, content, tmp_dir: Path, normalize, verbose: bool = True):
     needed_updates = []
     for action in parse_actions(content, file=name):
         method = ACTIONS[action["action"]]
@@ -53,9 +55,9 @@ def print_diff(action):
                 click.echo(line, nl=False)
 
 
-class Substituter(object):
+class SubstituteRegex:
     def __init__(self, match, replace):
-        self.match = match
+        self.match = re.compile(match)
         self.replace = replace
 
     @classmethod
@@ -65,36 +67,69 @@ class Substituter(object):
         return cls(match=parts[1], replace=parts[2])
 
     def __call__(self, line):
-        return re.sub(self.match, self.replace, line)
+        return self.match.sub(self.replace, line)
 
     def __repr__(self):
-        return "<Substituter {self.match!r} to {self.replace!r}>".format(self=self)
+        return "<Substituter {self.match.pattern!r} to {self.replace!r}>".format(
+            self=self
+        )
+
+
+class SubstituteAddress:
+    def __init__(self):
+        self.match = re.compile(r"at 0x([0-9a-f]+)>")
+        self.counter = count(1)
+        self.known_addresses = defaultdict(lambda: next(self.counter))
+
+    def replace_address(self, pattern_match: re.Match):
+        group = pattern_match.group(1)
+
+        return f"at 0xdeadbeef{self.known_addresses[group]:04x}>"
+
+    def __call__(self, line: str) -> str:
+        return self.match.sub(self.replace_address, line)
 
 
 def default_substituters(targetdir):
     return [
-        Substituter(match=re.escape(targetdir), replace="/path/to/example"),
-        Substituter(match=re.escape(os.getcwd()), replace="$PWD"),
-        Substituter(match=r"at 0x[0-9a-f]+>", replace="at 0xdeadbeef>"),
-        Substituter(match=re.escape(sys.prefix), replace='$PYTHON_PREFIX'),
+        SubstituteRegex(
+            match=re.escape(os.fspath(targetdir)), replace="/path/to/example"
+        ),
+        SubstituteRegex(match=re.escape(os.getcwd()), replace="$PWD"),
+        SubstituteAddress(),
+        SubstituteRegex(
+            match=re.escape(sys.prefix) + ".*?site-packages", replace="$PYTHON_SITE"
+        ),
+        SubstituteRegex(match=re.escape(sys.prefix), replace="$PYTHON_PREFIX"),
     ]
+
+
+def mktemp(rootdir, name):
+    if rootdir is not None:
+        return Path(rootdir)
+    root = tempfile.gettempdir()
+    rootdir = Path(root, "regendoc-tmpdirs")
+    rootdir.mkdir(exist_ok=True)
+    return Path(tempfile.mkdtemp(prefix=name + "-", dir=rootdir))
 
 
 @click.command()
 @click.argument("files", nargs=-1)
 @click.option("--update", is_flag=True)
-@click.option("--normalize", type=Substituter.parse, multiple=True)
+@click.option("--normalize", type=SubstituteRegex.parse, multiple=True)
 @click.option("--verbose", default=False, is_flag=True)
-def main(files, update, normalize=(), rootdir=None, verbose=False):
-    tmpdir = rootdir or tempfile.mkdtemp(prefix="regendoc-exec-")
+def main(files, update, normalize=(), rootdir=None, def_name=None, verbose=False):
+    cwd = Path.cwd()
+    verbose = True
+    tmpdir: Path = mktemp(rootdir, cwd.name)
     total = len(files)
     for num, name in enumerate(files, 1):
-        targetdir = os.path.join(tmpdir, "%s-%d" % (os.path.basename(name), num))
-        with io.open(name, encoding="UTF-8") as fp:
+        targetdir = tmpdir.joinpath("%s-%d" % (os.path.basename(name), num))
+        with open(name) as fp:
             content = list(fp)
-        os.mkdir(targetdir)
+        targetdir.mkdir()
         click.secho(
-            "#[{num:3d}/{total:3d}] {name}".format(num=num, total=total, name=name),
+            f"#[{num:3d}/{total:3d}] {name}",
             bold=True,
         )
         updates = check_file(
@@ -111,5 +146,5 @@ def main(files, update, normalize=(), rootdir=None, verbose=False):
             print_diff(action)
         if update:
             corrected = correct_content(content, updates)
-            with io.open(name, "w", encoding="UTF-8") as f:
+            with open(name, "w", encoding="UTF-8") as f:
                 f.writelines(corrected)

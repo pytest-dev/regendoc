@@ -86,7 +86,7 @@ def classify(lines, indent=4, line=None):
         cwd, target = first.split(" $ ")
         target = target.strip()
         return at("shell", target, cwd)
-    elif not indent and any(x.strip() == ".. regendoc:wipe" for x in lines):
+    elif not indent and any(".. regendoc:wipe" in x for x in lines):
         return {"action": "wipe"}
 
     return at(None, first)

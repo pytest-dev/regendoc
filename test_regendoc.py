@@ -145,7 +145,7 @@ def example(tmpdir):
 
 def test_simple_new_content(tmpdir):
 
-    needed_update, = check_file(
+    (needed_update,) = check_file(
         name="example",
         content=simple.splitlines(True),
         tmp_dir=str(tmpdir),
@@ -182,7 +182,9 @@ def test_single_update():
 
 def test_stripped_whitespace_no_update(tmpdir):
     raw = indented.splitlines(True)
-    action, = check_file(name="example", content=raw, tmp_dir=str(tmpdir), normalize=[])
+    (action,) = check_file(
+        name="example", content=raw, tmp_dir=str(tmpdir), normalize=[]
+    )
     assert action["content"] == action["new_content"]
     corrected = correct_content(raw, [action])
     assert raw == corrected
@@ -209,11 +211,11 @@ def test_check_file(tmpdir, example):
     assert tmpdir.join("test_simplefactory.py").check()
 
 
-def test_main_no_update(tmpdir, example, run):
-    run(example, update=False, rootdir=str(tmpdir))
+def test_main_no_update(tmp_path, example, run):
+    run(example, update=False, rootdir=tmp_path)
     # check for the created tmpdir
 
-    assert tmpdir.join("example.txt-1").check(dir=1)
+    assert tmp_path.joinpath("example.txt-1").is_dir()
 
 
 def test_empty_update(tmpdir, run):
@@ -240,7 +242,7 @@ def test_docfile_chdir(tmpdir, monkeypatch):
     filename = str(tmpdir.join("test.txt"))
     content = ["some shell test\n", "  nested $ cat file\n", "  some other text\n"]
 
-    action, = parse_actions(content, file=filename)
+    (action,) = parse_actions(content, file=filename)
     excpected_action = {
         "action": "shell",
         "content": "some other text\n",
@@ -290,10 +292,10 @@ def test_wipe(tmpdir):
 
 
 def test_dotcwd(tmpdir):
-    name = str(tmpdir.ensure('src/file'))
+    name = str(tmpdir.ensure("src/file"))
     check_file(
         name=name,
-        content=['   . $ echo hi'],
-        tmp_dir=str(tmpdir.ensure('tmp', dir=True)),
+        content=["   . $ echo hi"],
+        tmp_dir=str(tmpdir.ensure("tmp", dir=True)),
         normalize=[],
     )
