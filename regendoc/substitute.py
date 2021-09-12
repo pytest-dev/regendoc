@@ -8,7 +8,10 @@ import os
 
 class SubstituteRegex:
     def __init__(self, match, replace):
-        self.match = re.compile(match)
+        try:
+            self.match = re.compile(match)
+        except re.error as e:
+            raise ValueError(match) from e
         self.replace = replace
 
     @classmethod

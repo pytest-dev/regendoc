@@ -6,7 +6,8 @@ from pathlib import Path
 from .parse import parse_actions, correct_content
 from .actions import ACTIONS
 from .substitute import SubstituteRegex, default_substituters
-
+import logging
+from rich.logging import RichHandler
 
 def normalize_content(content, operators):
     lines = content.splitlines(True)
@@ -67,6 +68,11 @@ def mktemp(rootdir, name):
 @click.option("--normalize", type=SubstituteRegex.parse, multiple=True)
 @click.option("--verbose", default=False, is_flag=True)
 def main(files, update, normalize=(), rootdir=None, def_name=None, verbose=False):
+    log = logging.getLogger("regendoc")
+    log.propagate = False
+    handler = RichHandler(markup=True, rich_tracebacks=True, show_path=False, log_time_format="[%H:%m]")
+    log.addHandler(handler)
+    log.setLevel(logging.DEBUG if verbose else logging.INFO)
     cwd = Path.cwd()
     verbose = True
     tmpdir: Path = mktemp(rootdir, cwd.name)
@@ -76,9 +82,8 @@ def main(files, update, normalize=(), rootdir=None, def_name=None, verbose=False
         with open(name) as fp:
             content = list(fp)
         targetdir.mkdir()
-        click.secho(
-            f"#[{num:3d}/{total:3d}] {name}",
-            bold=True,
+        log.info(
+            f"[bold]#[{num:3d}/{total:3d}] {name}[/bold]"
         )
         updates = check_file(
             name=name,

@@ -4,11 +4,16 @@ import subprocess
 import shutil
 from pathlib import Path
 
+from dataclasses import dataclass
+from typing import Callable
+from logging import getLogger
+
+log = getLogger(__name__)
+
 
 def write(name, target_dir: Path, action, verbose):
     # XXX: insecure
-    if verbose:
-        click.echo("write to %(target)s" % action)
+    log.debug("write to {action}", action=action)
     target = os.path.join(target_dir, action["target"])
     target_dir = os.path.dirname(target)
     if not os.path.isdir(target_dir):
@@ -38,10 +43,9 @@ def process(name, target_dir, action, verbose):
     if not os.path.isdir(target_dir):
         os.makedirs(target_dir)
     target = action["target"]
-    if verbose:
-        click.echo(f"popen {target} cwd={target_dir}" % action)
+    log.debug(f"popen {target!r}\n  cwd={target_dir}")
     output = subprocess.run(
-        action["target"],
+        target,
         shell=True,
         cwd=target_dir,
         stdout=subprocess.PIPE,
@@ -54,10 +58,14 @@ def process(name, target_dir, action, verbose):
 
 
 def wipe(name, target_dir, action, verbose):
-    if verbose:
-        click.secho(f"wiping targetdir {target_dir} of {name}", bold=True)
+    log.debug(f"wiping targetdir {target_dir} of {name}", bold=True)
     shutil.rmtree(target_dir)
     os.mkdir(target_dir)
 
 
 ACTIONS = {"shell": process, "wipe": wipe, "write": write}
+
+
+@dataclass
+class Action:
+    command: Callable[[str, Path, "Action", bool], None]

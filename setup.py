@@ -10,7 +10,7 @@ args = dict(
     packages=["regendoc"],
     license="MPL2",
     entry_points={"console_scripts": ["regendoc = regendoc:main"]},
-    install_requires=["click"],
+    install_requires=["click", "rich"],
     setup_requires=["setuptools_scm"],
 )
 

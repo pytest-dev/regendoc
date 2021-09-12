@@ -1,3 +1,6 @@
+
+
+
 def dedent(line, last_indent):
     if last_indent is not None:
         if line[:last_indent].isspace():
