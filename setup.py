@@ -1,18 +1,8 @@
-from setuptools import setup
+import setuptools
+import pkg_resources
 
-args = dict(
-    name="regendoc",
-    use_scm_version=True,
-    description="a tool to check/update simple file/shell " "examples in documentation",
-    url="http://github.com/pytest-dev/regendoc/",
-    author="Ronny Pfannschmidt",
-    author_email="opensource@ronnypfannschmidt.de",
-    packages=["regendoc"],
-    license="MPL2",
-    entry_points={"console_scripts": ["regendoc = regendoc:main"]},
-    install_requires=["click", "rich"],
-    setup_requires=["setuptools_scm"],
-)
+pkg_resources.require("setuptools>45")
+pkg_resources.require("setuptools_scm>=6.3.1")
 
 if __name__ == "__main__":
-    setup(**args)
+    setuptools.setup()
