@@ -1,5 +1,5 @@
+from __future__ import annotations
 import os
-import click
 import subprocess
 import shutil
 from pathlib import Path
@@ -11,39 +11,35 @@ from logging import getLogger
 log = getLogger(__name__)
 
 
-def write(name, target_dir: Path, action, verbose):
+def write(target_dir: Path, action: Action) -> None:
     # XXX: insecure
-    log.debug("write to {action}", action=action)
-    target = os.path.join(target_dir, action["target"])
-    target_dir = os.path.dirname(target)
-    if not os.path.isdir(target_dir):
-        os.makedirs(target_dir)
-    with open(target, "w") as fp:
-        fp.write(action["content"])
+    assert not action.target.startswith(os.path.sep), action.target
+    log.debug("write to [bold]%s[/]", action.target)
+    target = target_dir.joinpath(action.target)
+    target.parent.mkdir(exist_ok=True, parents=True)
+    target.write_text(action.content)
 
 
-def process(name, target_dir, action, verbose):
-    if action["cwd"]:
+def process(target_dir: Path, action: Action) -> str:
+    if action.cwd:
+
         # the cwd option is insecure and used for examples
         # that already have all files in place
         # like an examples folder for example
-        if action["cwd"] == ".":
-            src = os.path.abspath(os.path.dirname(action["file"]))
-
-            target_dir = os.path.join(target_dir, "CWD")
+        if action.cwd is not None and action.cwd == Path("."):
+            assert action.file is not None
+            src = action.file.parent
+            target_dir = target_dir / "CWD"
         else:
-            src = os.path.join(
-                os.path.abspath(os.path.dirname(action["file"])), action["cwd"]
-            )
+            src = action.file.parent.joinpath(action.cwd)
 
-            target_dir = os.path.join(target_dir, action["cwd"])
-
+            target_dir = target_dir.joinpath(action.cwd)
         shutil.copytree(src, target_dir)
 
     if not os.path.isdir(target_dir):
         os.makedirs(target_dir)
-    target = action["target"]
-    log.debug(f"popen {target!r}\n  cwd={target_dir}")
+    target = action.target
+    log.debug("popen %r\n  cwd=%s", target, target_dir)
     output = subprocess.run(
         target,
         shell=True,
@@ -57,15 +53,27 @@ def process(name, target_dir, action, verbose):
     return output.stdout
 
 
-def wipe(name, target_dir, action, verbose):
-    log.debug(f"wiping targetdir {target_dir} of {name}", bold=True)
+def wipe(target_dir: Path, action: Action) -> None:
+    log.debug("wiping targetdir [bold warning]%s[/]", target_dir)
     shutil.rmtree(target_dir)
     os.mkdir(target_dir)
 
 
 ACTIONS = {"shell": process, "wipe": wipe, "write": write}
 
+COMMAND_TYPE = Callable[[Path, "Action"], "str|None"]
+
 
 @dataclass
 class Action:
-    command: Callable[[str, Path, "Action", bool], None]
+    command: COMMAND_TYPE
+    target: str
+    content: str
+    file: Path
+    new_content: str | None = None
+    cwd: Path | None = None
+    indent: int = 0
+    line: int = 0
+
+    def __call__(self, target_dir: Path) -> str | None:
+        return self.command(target_dir, self)

@@ -1,15 +1,25 @@
+from __future__ import annotations
 import os
-
-import click
+from regendoc.actions import Action
+from typing import Callable, Generator, Sequence
+import contextlib
+import typer
 import tempfile
 from pathlib import Path
 from .parse import parse_actions, correct_content
-from .actions import ACTIONS
-from .substitute import SubstituteRegex, default_substituters
+from .substitute import SubstituteAddress, SubstituteRegex, default_substituters
 import logging
 from rich.logging import RichHandler
+from rich.console import Console
+from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
 
-def normalize_content(content, operators):
+log = logging.getLogger("regendoc")
+log.propagate = False
+
+NORMALIZERS = Sequence[Callable[[str], str]]
+
+
+def normalize_content(content: str, operators: NORMALIZERS) -> str:
     lines = content.splitlines(True)
     result = []
     for line in lines:
@@ -19,21 +29,23 @@ def normalize_content(content, operators):
     return "".join(result)
 
 
-def check_file(name, content, tmp_dir: Path, normalize, verbose: bool = True):
+def check_file(
+    path: Path, content: list[str], tmp_dir: Path, normalize: NORMALIZERS
+) -> list[Action]:
     needed_updates = []
-    for action in parse_actions(content, file=name):
-        method = ACTIONS[action["action"]]
-        new_content = method(
-            name=name, target_dir=tmp_dir, action=action, verbose=verbose
-        )
+    for action in parse_actions(content, file=path):
+
+        new_content = action(tmp_dir)
         if new_content:
-            action["new_content"] = normalize_content(new_content, normalize)
+            action.new_content = normalize_content(new_content, normalize)
             needed_updates.append(action)
     return needed_updates
 
 
-def print_diff(action):
-    content, out = action["content"], action["new_content"]
+def print_diff(action: Action, console: Console) -> None:
+    content, out = action.content, action.new_content
+    assert out is not None
+
     if out != content:
         import difflib
 
@@ -42,18 +54,15 @@ def print_diff(action):
         contl = content.splitlines(True)
         lines = differ.compare(contl, outl)
 
-        mapping = {"+": "green", "-": "red", "?": "blue"}
+        styles = {"+": "bold green", "-": "bold red", "?": "bold blue"}
         if lines:
-            click.secho("$ " + action["target"], bold=True, fg="blue")
+            console.print("$", action.target, style="bold blue")
         for line in lines:
-            color = mapping.get(line[0])
-            if color:
-                click.secho(line, fg=color, bold=True, nl=False)
-            else:
-                click.echo(line, nl=False)
+            style = styles.get(line[0])
+            console.print(line, style=style, end="")
 
 
-def mktemp(rootdir, name):
+def mktemp(rootdir: Path | None, name: str) -> Path:
     if rootdir is not None:
         return Path(rootdir)
     root = tempfile.gettempdir()
@@ -62,42 +71,71 @@ def mktemp(rootdir, name):
     return Path(tempfile.mkdtemp(prefix=name + "-", dir=rootdir))
 
 
-@click.command()
-@click.argument("files", nargs=-1)
-@click.option("--update", is_flag=True)
-@click.option("--normalize", type=SubstituteRegex.parse, multiple=True)
-@click.option("--verbose", default=False, is_flag=True)
-def main(files, update, normalize=(), rootdir=None, def_name=None, verbose=False):
-    log = logging.getLogger("regendoc")
-    log.propagate = False
-    handler = RichHandler(markup=True, rich_tracebacks=True, show_path=False, log_time_format="[%H:%m]")
-    log.addHandler(handler)
-    log.setLevel(logging.DEBUG if verbose else logging.INFO)
-    cwd = Path.cwd()
-    verbose = True
-    tmpdir: Path = mktemp(rootdir, cwd.name)
-    total = len(files)
-    for num, name in enumerate(files, 1):
-        targetdir = tmpdir.joinpath("%s-%d" % (os.path.basename(name), num))
-        with open(name) as fp:
-            content = list(fp)
-        targetdir.mkdir()
-        log.info(
-            f"[bold]#[{num:3d}/{total:3d}] {name}[/bold]"
-        )
-        updates = check_file(
-            name=name,
-            content=content,
-            tmp_dir=targetdir,
-            normalize=default_substituters(targetdir) + list(normalize),
-            verbose=verbose,
-        )
-        for action in updates:
-            if action["content"] is None or action["new_content"] is None:
-                continue
+@contextlib.contextmanager
+def ux_setup(verbose: bool) -> Generator[Progress, None, None]:
 
-            print_diff(action)
-        if update:
-            corrected = correct_content(content, updates)
-            with open(name, "w", encoding="UTF-8") as f:
-                f.writelines(corrected)
+    columns = [
+        TextColumn("[progress.description]{task.description}"),
+        TextColumn("[progress.percentage]{task.completed:3.0f}/{task.total:3.0f}"),
+        BarColumn(),
+        TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+        TimeRemainingColumn(),
+    ]
+    with Progress(
+        *columns,
+    ) as progress:
+
+        handler = RichHandler(
+            markup=True,
+            rich_tracebacks=True,
+            show_path=False,
+            log_time_format="[%H:%m]",
+            console=progress.console,
+        )
+        log.addHandler(handler)
+        log.setLevel(logging.DEBUG if verbose else logging.INFO)
+
+        yield progress
+
+
+def _main(
+    files: list[Path],
+    update: bool = typer.Option(False, "--update"),
+    normalize: list[str] = typer.Option(default=[]),
+    rootdir: Path | None = None,
+    def_name: str | None = None,
+    verbose: bool = typer.Option(False, "--verbose"),
+) -> None:
+
+    parsed_normalize: list[SubstituteRegex | SubstituteAddress] = [
+        SubstituteRegex.parse(s) for s in normalize
+    ]
+
+    cwd = Path.cwd()
+    tmpdir: Path = mktemp(rootdir, cwd.name)
+
+    with ux_setup(verbose) as progress:
+        task_id = progress.add_task(description="progressing files")
+        for num, name in enumerate(progress.track(files, task_id=task_id)):
+
+            targetdir = tmpdir.joinpath("%s-%d" % (os.path.basename(name), num))
+            with open(name) as fp:
+                content = list(fp)
+            targetdir.mkdir()
+            log.info(f"[bold]{name}[/bold]")
+            updates = check_file(
+                path=name,
+                content=content,
+                tmp_dir=targetdir,
+                normalize=default_substituters(targetdir) + parsed_normalize,
+            )
+            for action in updates:
+                print_diff(action, progress.console)
+            if update:
+                corrected = correct_content(content, updates)
+                with open(name, "w") as f:
+                    f.writelines(corrected)
+
+
+def main() -> None:
+    typer.run(_main)

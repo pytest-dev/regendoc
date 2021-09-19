@@ -1,23 +1,16 @@
-import textwrap
+from __future__ import annotations
 import pytest
+from pathlib import Path
 
 from regendoc.parse import blocks, correct_content, classify, parse_actions
+from regendoc.actions import Action, process, write
 
-from regendoc import main, check_file
-
-from operator import itemgetter
-
-a_c_t = itemgetter("action", "target")
+from regendoc import _main, check_file
 
 
 @pytest.fixture
-def run():
-    def _run(*args, **kw):
-        newkw = {k: str(v) if not isinstance(v, bool) else v for k, v in kw.items()}
-        args = [str(x) for x in args]
-        main.callback(args, **newkw)
-
-    return _run
+def fake_file(tmp_path: Path) -> Path:
+    return tmp_path / "mess.rst"
 
 
 input_data_for_blocks = """
@@ -56,7 +49,7 @@ an extra echo:
 """
 
 
-def test_blocks():
+def test_blocks() -> None:
     result = blocks(input_data_for_blocks.splitlines(True))
     expected = [
         # indent level, start line, lines
@@ -68,210 +61,214 @@ def test_blocks():
     assert result == expected
 
 
-def test_classify_write():
+def test_classify_write(fake_file: Path) -> None:
 
-    write = classify(["# content of test_foo.py\n", "def test()\n", "    pass\n"])
+    write_result = classify(
+        ["# content of test_foo.py\n", "def test()\n", "    pass\n"], file=fake_file
+    )
 
-    expected = {
-        "action": "write",
-        "cwd": None,
-        "target": "test_foo.py",
-        "content": "def test()\n    pass\n",
-        "indent": 4,
-        "line": None,
-    }
-    assert write == expected
+    expected = Action(
+        command=write,
+        cwd=None,
+        target="test_foo.py",
+        content="def test()\n    pass\n",
+        indent=0,
+        line=0,
+        file=fake_file,
+    )
+    assert write_result == expected
 
 
-def test_classify_shell():
-    cmd = classify(lines=["$ py.test -x\n", "crud\n"])
-    expected = {
-        "action": "shell",
-        "cwd": None,
-        "target": "py.test -x",
-        "content": "crud\n",
-        "indent": 4,
-        "line": None,
-    }
+def test_classify_shell(fake_file: Path) -> None:
+    cmd = classify(lines=["$ py.test -x\n", "crud\n"], file=fake_file)
+    expected = Action(
+        command=process,
+        cwd=None,
+        target="py.test -x",
+        content="crud\n",
+        indent=0,
+        line=0,
+        file=fake_file,
+    )
     assert cmd == expected
 
 
-def test_classify_chdir_shell():
-    cmd = classify(lines=["testing $ echo hi\n", "crud\n"])
+def test_classify_chdir_shell(fake_file: Path) -> None:
+    cmd = classify(lines=["testing $ echo hi\n", "crud\n"], file=fake_file)
 
-    expected = {
-        "action": "shell",
-        "cwd": "testing",
-        "target": "echo hi",
-        "content": "crud\n",
-        "indent": 4,
-        "line": None,
-    }
+    expected = Action(
+        command=process,
+        cwd=Path("testing"),
+        target="echo hi",
+        content="crud\n",
+        indent=0,
+        line=0,
+        file=fake_file,
+    )
 
     assert cmd == expected
+
+
+EXAMPLE_DOC = """\
+a simple test function call with one argument factory
+==============================================================
+the function argument.  Let's look at a simple self-contained
+example that you can put into a test module::
+    # content of: test_simplefactory.py
+    def pytest_funcarg__myfuncarg(request):
+        return 42
+    def test_function(myfuncarg):
+        assert myfuncarg == 17
+.. code-block:: bash
+    $ py.test test_simplefactory.py
+    output should be here - but thats nice for testing
+the end.
+"""
 
 
 @pytest.fixture
-def example(tmpdir):
-    p = tmpdir.join("example.txt")
-    p.write(
-        textwrap.dedent(
-            """\
-        a simple test function call with one argument factory
-        ==============================================================
+def example(tmp_path: Path) -> Path:
+    p = tmp_path.joinpath("example.txt")
 
-        the function argument.  Let's look at a simple self-contained
-        example that you can put into a test module::
-
-            # content of: test_simplefactory.py
-            def pytest_funcarg__myfuncarg(request):
-                return 42
-
-            def test_function(myfuncarg):
-                assert myfuncarg == 17
-
-        .. code-block:: bash
-
-            $ py.test test_simplefactory.py
-
-            output should be here - but thats nice for testing
-
-        the end.
-    """
-        )
-    )
+    p.write_text(EXAMPLE_DOC)
     return p
 
 
-def test_simple_new_content(tmpdir):
+def test_simple_new_content(tmp_path: Path) -> None:
 
     (needed_update,) = check_file(
-        name="example",
+        path=Path("example"),
         content=simple.splitlines(True),
-        tmp_dir=str(tmpdir),
+        tmp_dir=tmp_path,
         normalize=[],
     )
 
-    expected_update = {
-        "action": "shell",
-        "cwd": None,
-        "file": "example",
-        "target": "echo hi",
-        "content": "oh no\n",
-        "new_content": "hi\n",
-        "indent": 4,
-        "line": 2,
-    }
+    expected_update = Action(
+        command=process,
+        cwd=None,
+        file=Path("example"),
+        target="echo hi",
+        content="oh no\n",
+        new_content="hi\n",
+        indent=4,
+        line=2,
+    )
     print(needed_update)
     assert needed_update == expected_update
 
 
-def test_single_update():
-    update = {
-        "action": "shell",
-        "target": "echo hi",
-        "content": "oh no\n",
-        "new_content": "hi\n",
-        "indent": 4,
-        "line": 2,
-    }
+def test_single_update(fake_file: Path) -> None:
+    update = Action(
+        command=process,
+        target="echo hi",
+        content="oh no\n",
+        new_content="hi\n",
+        indent=4,
+        line=2,
+        file=fake_file,
+    )
 
     corrected = correct_content(simple.splitlines(True), [update])
     assert corrected == simple_corrected.splitlines(True)
 
 
-def test_stripped_whitespace_no_update(tmpdir):
+def test_stripped_whitespace_no_update(tmp_path: Path) -> None:
     raw = indented.splitlines(True)
     (action,) = check_file(
-        name="example", content=raw, tmp_dir=str(tmpdir), normalize=[]
+        path=Path("example"), content=raw, tmp_dir=tmp_path, normalize=[]
     )
-    assert action["content"] == action["new_content"]
+    assert action.content == action.new_content
     corrected = correct_content(raw, [action])
     assert raw == corrected
 
 
-def test_actions_of(tmpdir, example):
+def test_actions_of(example: Path, fake_file: Path) -> None:
 
-    actions = list(parse_actions(example.readlines()))
+    actions = list(parse_actions(example.read_text().splitlines(), file=fake_file))
 
-    interesting = [a_c_t(x) for x in actions]
+    interesting = [(action.command, action.target) for action in actions]
     expected = [
-        ("write", "test_simplefactory.py"),
-        ("shell", "py.test test_simplefactory.py"),
+        (write, "test_simplefactory.py"),
+        (process, "py.test test_simplefactory.py"),
     ]
 
     assert interesting == expected
 
 
-def test_check_file(tmpdir, example):
+def test_check_file(tmp_path: Path, example: Path) -> None:
 
     check_file(
-        name="test.txt", content=example.readlines(), tmp_dir=str(tmpdir), normalize=[]
+        path=Path("test.txt"),
+        content=example.read_text().splitlines(True),
+        tmp_dir=tmp_path,
+        normalize=[],
     )
-    assert tmpdir.join("test_simplefactory.py").check()
+    assert tmp_path.joinpath("test_simplefactory.py").is_file()
 
 
-def test_main_no_update(tmp_path, example, run):
-    run(example, update=False, rootdir=tmp_path)
+def test_main_no_update(tmp_path: Path, example: Path) -> None:
+    _main([example], update=False, rootdir=tmp_path)
     # check for the created tmpdir
 
     assert tmp_path.joinpath("example.txt-1").is_dir()
 
 
-def test_empty_update(tmpdir, run):
-    simple_fp = tmpdir.join("simple.txt")
-    simple_fp.write("")
-    run(simple_fp, update=True, rootdir=str(tmpdir))
-    corrected = simple_fp.read()
+def test_empty_update(tmp_path: Path) -> None:
+    simple_fp = tmp_path / "simple.txt"
+    simple_fp.write_text("")
+    _main([simple_fp], update=True, rootdir=tmp_path)
+    corrected = simple_fp.read_text()
     assert corrected == ""
 
 
-def test_main_update(tmpdir, run):
-    simple_fp = tmpdir.join("simple.txt")
-    simple_fp.write(simple)
-    run(simple_fp, update=True, rootdir=str(tmpdir))
-    corrected = simple_fp.read()
+def test_main_update(tmp_path: Path) -> None:
+    simple_fp = tmp_path / "simple.txt"
+    simple_fp.write_text(simple)
+    _main([simple_fp], update=True, rootdir=tmp_path)
+    corrected = simple_fp.read_text()
 
     assert corrected == simple_corrected
 
 
-def test_docfile_chdir(tmpdir, monkeypatch):
+def test_docfile_chdir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    path = tmp_path / "nested/file"
+    path.parent.mkdir()
 
-    tmpdir.ensure("nested/file").write("some text\n")
-    monkeypatch.chdir(tmpdir)
-    filename = str(tmpdir.join("test.txt"))
+    path.write_text("some text\n")
+    monkeypatch.chdir(path.parent)
+    filename = tmp_path / "test.txt"
     content = ["some shell test\n", "  nested $ cat file\n", "  some other text\n"]
 
     (action,) = parse_actions(content, file=filename)
-    excpected_action = {
-        "action": "shell",
-        "content": "some other text\n",
-        "cwd": "nested",
-        "file": filename,
-        "indent": 2,
-        "line": 1,
-        "target": "cat file",
-    }
+    excpected_action = Action(
+        command=process,
+        content="some other text\n",
+        cwd=Path("nested"),
+        file=filename,
+        indent=2,
+        line=1,
+        target="cat file",
+    )
     assert action == excpected_action
 
     needed_updates = check_file(
-        name="example.txt",
+        path=tmp_path / "example.txt",
         content=content,
-        tmp_dir=str(tmpdir.join("tmp")),
+        tmp_dir=tmp_path / "tmp",
         normalize=[],
     )
 
     assert needed_updates
     # is it copied?
-    assert tmpdir.join("tmp/nested/file").check()
+    assert tmp_path.joinpath("tmp/nested/file").is_file()
 
 
-def test_parsing_problem(tmpdir, run):
-    simple_fp = tmpdir.join("index.txt")
-    simple_fp.write(example_index)
+def test_parsing_problem(tmp_path: Path) -> None:
+    simple_fp = tmp_path.joinpath("index.txt")
+    simple_fp.write_text(example_index)
 
-    run(simple_fp, update=True, rootdir=str(tmpdir))
-    corrected = simple_fp.read()
+    _main([simple_fp], update=True, rootdir=tmp_path)
+    corrected = simple_fp.read_text()
     assert corrected == example_index
 
 
@@ -283,19 +280,25 @@ py.test: no-boilerplate testing with Python
 """
 
 
-def test_wipe(tmpdir):
-    fp = tmpdir.join("simple.txt")
-    fp.write(".. regendoc:wipe\n")
-    check_file(name="test", content=fp.readlines(), tmp_dir=str(tmpdir), normalize=[])
-
-    assert not tmpdir.listdir()
-
-
-def test_dotcwd(tmpdir):
-    name = str(tmpdir.ensure("src/file"))
+def test_wipe(tmp_path: Path) -> None:
+    fp = tmp_path / "example.txt"
+    fp.write_text(".. regendoc:wipe\n")
     check_file(
-        name=name,
+        path=fp, content=fp.read_text().splitlines(), tmp_dir=tmp_path, normalize=[]
+    )
+
+    assert not list(tmp_path.iterdir())
+
+
+def test_dotcwd(tmp_path: Path) -> None:
+    name = tmp_path / "src/file"
+    name.parent.mkdir()
+    name.touch()
+    tmp = tmp_path / "tmp"
+    tmp.mkdir()
+    check_file(
+        path=name,
         content=["   . $ echo hi"],
-        tmp_dir=str(tmpdir.ensure("tmp", dir=True)),
+        tmp_dir=tmp,
         normalize=[],
     )
