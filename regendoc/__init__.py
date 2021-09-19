@@ -98,18 +98,15 @@ def ux_setup(verbose: bool) -> Generator[Progress, None, None]:
         yield progress
 
 
-def _main(
+def run(
     files: list[Path],
-    update: bool = typer.Option(False, "--update"),
-    normalize: list[str] = typer.Option(default=[]),
+    update: bool,
+    normalize: list[SubstituteRegex | SubstituteAddress]| None=None ,
     rootdir: Path | None = None,
     def_name: str | None = None,
-    verbose: bool = typer.Option(False, "--verbose"),
+    verbose: bool = False,
 ) -> None:
-
-    parsed_normalize: list[SubstituteRegex | SubstituteAddress] = [
-        SubstituteRegex.parse(s) for s in normalize
-    ]
+    parsed_normalize = normalize or []
 
     cwd = Path.cwd()
     tmpdir: Path = mktemp(rootdir, cwd.name)
@@ -136,6 +133,20 @@ def _main(
                 with open(name, "w") as f:
                     f.writelines(corrected)
 
+
+def _typer_main(
+    files: list[Path],
+    update: bool = typer.Option(False, "--update"),
+    normalize: list[str] = typer.Option(default=[]),
+    rootdir: Path | None = None,
+    def_name: str | None = None,
+    verbose: bool = typer.Option(False, "--verbose"),
+) -> None:
+
+    parsed_normalize: list[SubstituteRegex | SubstituteAddress] = [
+        SubstituteRegex.parse(s) for s in normalize
+    ]
+    run(files=files, update=update, normalize=parsed_normalize, rootdir=rootdir, def_name=def_name, verbose=verbose)
 
 def main() -> None:
     typer.run(_main)
