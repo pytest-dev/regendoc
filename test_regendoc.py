@@ -42,7 +42,7 @@ simple_corrected = simple.replace("oh no", "hi")
 
 indented = r"""
 an extra echo:
-    $ echo -e hi\\n\\nextra hi
+    $ printf "hi\n\nextra hi\n"
     hi
 
     extra hi
