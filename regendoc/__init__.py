@@ -101,7 +101,7 @@ def ux_setup(verbose: bool) -> Generator[Progress, None, None]:
 def run(
     files: list[Path],
     update: bool,
-    normalize: list[SubstituteRegex | SubstituteAddress]| None=None ,
+    normalize: list[SubstituteRegex | SubstituteAddress] | None = None,
     rootdir: Path | None = None,
     def_name: str | None = None,
     verbose: bool = False,
@@ -138,15 +138,23 @@ def _typer_main(
     files: list[Path],
     update: bool = typer.Option(False, "--update"),
     normalize: list[str] = typer.Option(default=[]),
-    rootdir: Optional[Path] = None,
-    def_name: Optional[str] = None,
+    rootdir: Path | None = None,
+    def_name: str | None = None,
     verbose: bool = typer.Option(False, "--verbose"),
 ) -> None:
 
     parsed_normalize: list[SubstituteRegex | SubstituteAddress] = [
         SubstituteRegex.parse(s) for s in normalize
     ]
-    run(files=files, update=update, normalize=parsed_normalize, rootdir=rootdir, def_name=def_name, verbose=verbose)
+    run(
+        files=files,
+        update=update,
+        normalize=parsed_normalize,
+        rootdir=rootdir,
+        def_name=def_name,
+        verbose=verbose,
+    )
+
 
 def main() -> None:
     typer.run(_typer_main)
