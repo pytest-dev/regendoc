@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 from regendoc.actions import Action
-from typing import Callable, Generator, Sequence
+from typing import Callable, Generator, Optional, Sequence
 import contextlib
 import typer
 import tempfile
@@ -138,8 +138,8 @@ def _typer_main(
     files: list[Path],
     update: bool = typer.Option(False, "--update"),
     normalize: list[str] = typer.Option(default=[]),
-    rootdir: Path | None = None,
-    def_name: str | None = None,
+    rootdir: Optional[Path] = None,
+    def_name: Optional[str] = None,
     verbose: bool = typer.Option(False, "--verbose"),
 ) -> None:
 
@@ -149,4 +149,4 @@ def _typer_main(
     run(files=files, update=update, normalize=parsed_normalize, rootdir=rootdir, def_name=def_name, verbose=verbose)
 
 def main() -> None:
-    typer.run(_main)
+    typer.run(_typer_main)
