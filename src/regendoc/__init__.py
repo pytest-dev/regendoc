@@ -3,7 +3,6 @@ import os
 from regendoc.actions import Action
 from typing import Callable, Generator, Sequence
 import contextlib
-import typer
 import tempfile
 from pathlib import Path
 from .parse import parse_actions, correct_content
@@ -132,29 +131,3 @@ def run(
                 corrected = correct_content(content, updates)
                 with open(name, "w") as f:
                     f.writelines(corrected)
-
-
-def _typer_main(
-    files: list[Path],
-    update: bool = typer.Option(False, "--update"),
-    normalize: list[str] = typer.Option(default=[]),
-    rootdir: Path | None = None,
-    def_name: str | None = None,
-    verbose: bool = typer.Option(False, "--verbose"),
-) -> None:
-
-    parsed_normalize: list[SubstituteRegex | SubstituteAddress] = [
-        SubstituteRegex.parse(s) for s in normalize
-    ]
-    run(
-        files=files,
-        update=update,
-        normalize=parsed_normalize,
-        rootdir=rootdir,
-        def_name=def_name,
-        verbose=verbose,
-    )
-
-
-def main() -> None:
-    typer.run(_typer_main)

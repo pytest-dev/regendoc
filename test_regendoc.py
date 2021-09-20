@@ -1,7 +1,8 @@
 from __future__ import annotations
+import os
 import pytest
 from pathlib import Path
-
+import subprocess
 from regendoc.parse import blocks, correct_content, classify, parse_actions
 from regendoc.actions import Action, process, write
 
@@ -302,3 +303,11 @@ def test_dotcwd(tmp_path: Path) -> None:
         tmp_dir=tmp,
         normalize=[],
     )
+
+
+def test_cli(tmp_path: Path) -> None:
+    root = tmp_path.joinpath("tmp")
+    root.mkdir()
+    sample = tmp_path.joinpath("example.txt")
+    sample.write_text(simple)
+    subprocess.check_call(["regendoc", os.fspath(sample), "--rootdir", os.fspath(root)])
