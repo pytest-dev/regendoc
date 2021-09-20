@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 from regendoc.actions import Action
-from typing import Callable, Generator, Optional, Sequence
+from typing import Callable, Generator, Sequence
 import contextlib
 import typer
 import tempfile
