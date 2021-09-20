@@ -5,7 +5,7 @@ from pathlib import Path
 from regendoc.parse import blocks, correct_content, classify, parse_actions
 from regendoc.actions import Action, process, write
 
-from regendoc import _main, check_file
+from regendoc import run, check_file
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ simple_corrected = simple.replace("oh no", "hi")
 
 indented = r"""
 an extra echo:
-    $ echo -e hi\\n\\nextra hi
+    $ printf "hi\n\nextra hi\n"
     hi
 
     extra hi
@@ -207,16 +207,16 @@ def test_check_file(tmp_path: Path, example: Path) -> None:
 
 
 def test_main_no_update(tmp_path: Path, example: Path) -> None:
-    _main([example], update=False, rootdir=tmp_path)
+    run([example], update=False, rootdir=tmp_path)
     # check for the created tmpdir
 
-    assert tmp_path.joinpath("example.txt-1").is_dir()
+    assert tmp_path.joinpath("example.txt-0").is_dir()
 
 
 def test_empty_update(tmp_path: Path) -> None:
     simple_fp = tmp_path / "simple.txt"
     simple_fp.write_text("")
-    _main([simple_fp], update=True, rootdir=tmp_path)
+    run([simple_fp], update=True, rootdir=tmp_path)
     corrected = simple_fp.read_text()
     assert corrected == ""
 
@@ -224,7 +224,7 @@ def test_empty_update(tmp_path: Path) -> None:
 def test_main_update(tmp_path: Path) -> None:
     simple_fp = tmp_path / "simple.txt"
     simple_fp.write_text(simple)
-    _main([simple_fp], update=True, rootdir=tmp_path)
+    run([simple_fp], update=True, rootdir=tmp_path)
     corrected = simple_fp.read_text()
 
     assert corrected == simple_corrected
@@ -267,7 +267,7 @@ def test_parsing_problem(tmp_path: Path) -> None:
     simple_fp = tmp_path.joinpath("index.txt")
     simple_fp.write_text(example_index)
 
-    _main([simple_fp], update=True, rootdir=tmp_path)
+    run([simple_fp], update=True, rootdir=tmp_path)
     corrected = simple_fp.read_text()
     assert corrected == example_index
 
