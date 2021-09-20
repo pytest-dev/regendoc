@@ -1,7 +1,7 @@
 from __future__ import annotations
 import os
 from regendoc.actions import Action
-from typing import Callable, Generator, Sequence
+from typing import Callable, Iterator, Sequence
 import contextlib
 import tempfile
 from pathlib import Path
@@ -71,7 +71,7 @@ def mktemp(rootdir: Path | None, name: str) -> Path:
 
 
 @contextlib.contextmanager
-def ux_setup(verbose: bool) -> Generator[Progress, None, None]:
+def ux_setup(verbose: bool) -> Iterator[Progress]:
 
     columns = [
         TextColumn("[progress.description]{task.description}"),
