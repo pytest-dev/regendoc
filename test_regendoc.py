@@ -3,7 +3,13 @@ import os
 import pytest
 from pathlib import Path
 import subprocess
-from regendoc.parse import blocks, correct_content, classify, parse_actions
+from regendoc.parse import (
+    blocks,
+    correct_content,
+    classify,
+    parse_actions,
+    LineBlock as LB,
+)
 from regendoc.actions import Action, process, write
 
 from regendoc import run, check_file
@@ -38,6 +44,24 @@ an echo:
     oh no
 """
 
+input_data_for_blocks_md = """
+some text
+more text
+
+```python
+# content of test_foo.py
+
+def test_fun(hi):
+    pass
+```
+
+```text
+$ pytest test_foo.py
+hello
+```
+"""
+
+
 simple_corrected = simple.replace("oh no", "hi")
 
 
@@ -51,14 +75,33 @@ an extra echo:
 
 
 def test_blocks() -> None:
-    result = blocks(input_data_for_blocks.splitlines(True))
+    result = blocks(input_data_for_blocks.splitlines(True), is_markdown=False)
     expected = [
         # indent level, start line, lines
-        (0, 1, ["some text\n", "more text\n", "\n", "next block::\n"]),
-        (4, 6, ["indent\n", "  block\n", "\n", "with more\n"]),
-        (0, 11, [".. directive:: test\n"]),
-        (4, 12, [":param: test\n", "\n", "text\n"]),
+        LB(0, 1, ["some text\n", "more text\n", "\n", "next block::\n"]),
+        LB(4, 6, ["indent\n", "  block\n", "\n", "with more\n"]),
+        LB(0, 11, [".. directive:: test\n"]),
+        LB(4, 12, [":param: test\n", "\n", "text\n"]),
     ]
+    assert result == expected
+
+
+def test_blocks_markdown() -> None:
+    result = blocks(input_data_for_blocks_md.splitlines(True), is_markdown=True)
+    expected = [
+        # indent level, start line, lines
+        LB(0, 0, ["\n", "some text\n", "more text\n", "\n", "```python\n"]),
+        LB(
+            0,
+            5,
+            ["# content of test_foo.py\n", "\n", "def test_fun(hi):\n", "    pass\n"],
+        ),
+        LB(0, 10, ["```\n", "\n", "```text\n"]),
+        LB(0, 12, ["$ pytest test_foo.py\n", "hello\n"]),
+    ]
+    import rich
+
+    rich.print(result)
     assert result == expected
 
 

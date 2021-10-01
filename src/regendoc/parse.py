@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import NamedTuple, cast
+from typing import Iterator, NamedTuple, cast
 from pathlib import Path
 from .actions import COMMAND_TYPE, Action, write, process, wipe
 from typing import Iterable
@@ -18,9 +18,36 @@ def dedent(line: str, last_indent: int) -> tuple[int, str]:
     return len(line) - len(stripped), stripped
 
 
-def blocks(lines: list[str]) -> list[LineBlock]:
+def blocks(lines: list[str], is_markdown: bool) -> list[LineBlock]:
     if not lines:
         return []
+    if is_markdown:
+        return list(blocks_by_markdown(lines))
+    else:
+        return list(blocks_by_indent(lines))
+
+
+def blocks_by_markdown(lines: list[str]) -> Iterator[LineBlock]:
+    "this only handles simple single level markdown, no myst directive nesting support"
+    akk: list[str] = []
+    start: int | None = None
+    in_code: bool = False
+    for lineno, line in enumerate(lines):
+        if start is None:
+            start = lineno
+        akk.append(line)
+        if line.startswith("```"):
+            if in_code:
+                items, akk = akk[:-1], akk[-1:]
+            else:
+                items, akk = akk, []
+
+            in_code = not in_code
+            yield LineBlock(last_indent=0, firstline=start, items=items)
+            start = None
+
+
+def blocks_by_indent(lines: list[str]) -> list[LineBlock]:
     result: list[LineBlock] = []
     firstline = 0
     last_indent = dedent(lines[0], 0)[0]
@@ -102,7 +129,7 @@ def classify(
 
 def parse_actions(content: list[str] | str, file: Path) -> Iterable[Action]:
     lines = content if isinstance(content, list) else content.splitlines(True)
-    for indent, line, data in blocks(lines):
+    for indent, line, data in blocks(lines, is_markdown=file.suffix == ".md"):
         action = classify(lines=data, indent=indent, line=line, file=file)
         if action is not None:
             yield action
