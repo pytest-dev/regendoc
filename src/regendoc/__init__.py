@@ -104,6 +104,7 @@ def run(
     rootdir: Path | None = None,
     def_name: str | None = None,
     verbose: bool = False,
+    columns: int | None = None,
 ) -> None:
     parsed_normalize = normalize or []
 
@@ -111,6 +112,8 @@ def run(
     tmpdir: Path = mktemp(rootdir, cwd.name)
 
     with ux_setup(verbose) as progress:
+        if columns is not None:
+            os.environ["COLUMNS"] = str(columns)
         task_id = progress.add_task(description="progressing files")
         for num, name in enumerate(progress.track(files, task_id=task_id)):
 

@@ -16,6 +16,7 @@ def typer_main(
     rootdir: Optional[Path] = None,
     def_name: Optional[str] = None,
     verbose: bool = typer.Option(False, "--verbose"),
+    columns: Optional[int] = None,
 ) -> None:
 
     parsed_normalize: List[Union[SubstituteRegex, SubstituteAddress]] = [
@@ -28,4 +29,5 @@ def typer_main(
         rootdir=rootdir,
         def_name=def_name,
         verbose=verbose,
+        columns=columns,
     )
